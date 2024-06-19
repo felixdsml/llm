@@ -111,6 +111,8 @@ venv.bak/
 dspy-env
 phoenix-env
 env-phoenix-dspy
+env-phoenix-dspy-2_5
+env-phoenix-dspy-fixed
 
 # Spyder project settings
 .spyderproject
