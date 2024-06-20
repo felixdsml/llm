@@ -107,80 +107,10 @@ class TextToSqlProgram(dspy.Module):
 
 import time
 
-# def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index):
-#     """Evaluate the model using different optimization techniques and return the results."""
-    
-#     results = {
-#         "Model": model_name,
-#         "Evaluator Model": evaluator_model_name,
-#         "Random Seed": random_seed,
-#         "Run Index": run_index
-#     }
-    
-#     generate_sql_query = dspy.Predict(signature=TextToSql)
-
-#     start_time = time.time()
-#     print("Evaluating on validation set")
-#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0)
-#     val_scores = evaluate(generate_sql_query)
-#     results["Validation Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Evaluating on test set")
-#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0)
-#     test_scores = evaluate(generate_sql_query)
-#     results["Test Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Optimizing with LabeledFewShot and evaluating")
-#     optimizer = LabeledFewShot(k=4)
-#     optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
-#     results["LabeledFewShot Optimization Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Evaluating optimized program on validation set")
-#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0)
-#     val_optimized_scores = evaluate(optimized_program)
-#     results["LabeledFewShot Validation Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Evaluating optimized program on test set")
-#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0)
-#     test_optimized_scores = evaluate(optimized_program)
-#     results["LabeledFewShot Test Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Optimizing with BootstrapFewShotWithRandomSearch and evaluating")
-#     optimizer2 = BootstrapFewShotWithRandomSearch(metric=correctness_metric, max_bootstrapped_demos=2, num_candidate_programs=2, num_threads=NUM_THREADS)
-#     optimized_program_2 = optimizer2.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
-#     results["BootstrapFewShot Optimization Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Evaluating BootstrapFewShot optimized program on validation set")
-#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0)
-#     val_optimized_scores_2 = evaluate(optimized_program_2)
-#     results["BootstrapFewShot Validation Time"] = time.time() - start_time
-
-#     start_time = time.time()
-#     print("Evaluating BootstrapFewShot optimized program on test set")
-#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0)
-#     test_optimized_scores_2 = evaluate(optimized_program_2)
-#     results["BootstrapFewShot Test Time"] = time.time() - start_time
-
-#     print("Evaluation complete")
-#     results.update({
-#         "Validation Scores": val_scores,
-#         "Test Scores": test_scores,
-#         "Validation Scores (FewShot)": val_optimized_scores,
-#         "Test Scores (FewShot)": test_optimized_scores,
-#         "Validation Scores (BootstrapFewShot)": val_optimized_scores_2,
-#         "Test Scores (BootstrapFewShot)": test_optimized_scores_2
-#     })
-
-#     return results
 
 def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index):
     """Evaluate the model using different optimization techniques and return the results."""
+    start__total_time = time.time()
     
     results = {
         "Model": model_name,
@@ -201,7 +131,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     else:
         val_scores, val_results = val_evaluation
         val_individual_scores = None
-    results["Validation Time"] = time.time() - start_time
+    results["Validation Time"] = round(time.time() - start_time, 2)
 
     # Evaluate on test set
     start_time = time.time()
@@ -213,14 +143,14 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     else:
         test_scores, test_results = test_evaluation
         test_individual_scores = None
-    results["Test Time"] = time.time() - start_time
+    results["Test Time"] = round(time.time() - start_time, 2)
 
     # Optimize with LabeledFewShot and evaluate
     start_time = time.time()
     print("Optimizing with LabeledFewShot and evaluating")
     optimizer = LabeledFewShot(k=4)
     optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
-    results["LabeledFewShot Optimization Time"] = time.time() - start_time
+    results["LabeledFewShot Optimization Time"] = round(time.time() - start_time, 2)
 
     start_time = time.time()
     print("Evaluating optimized program on validation set")
@@ -231,7 +161,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     else:
         val_optimized_scores, val_optimized_results = val_optimized_evaluation
         val_optimized_individual_scores = None
-    results["LabeledFewShot Validation Time"] = time.time() - start_time
+    results["LabeledFewShot Validation Time"] = round(time.time() - start_time, 2)
 
     start_time = time.time()
     print("Evaluating optimized program on test set")
@@ -242,14 +172,14 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     else:
         test_optimized_scores, test_optimized_results = test_optimized_evaluation
         test_optimized_individual_scores = None
-    results["LabeledFewShot Test Time"] = time.time() - start_time
+    results["LabeledFewShot Test Time"] = round(time.time() - start_time, 2)
 
     # Optimize with BootstrapFewShotWithRandomSearch and evaluate
     start_time = time.time()
     print("Optimizing with BootstrapFewShotWithRandomSearch and evaluating")
     optimizer2 = BootstrapFewShotWithRandomSearch(metric=correctness_metric, max_bootstrapped_demos=2, num_candidate_programs=2, num_threads=NUM_THREADS)
     optimized_program_2 = optimizer2.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
-    results["BootstrapFewShot Optimization Time"] = time.time() - start_time
+    results["BootstrapFewShot Optimization Time"] = round(time.time() - start_time, 2)
 
     start_time = time.time()
     print("Evaluating BootstrapFewShot optimized program on validation set")
@@ -260,7 +190,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     else:
         val_optimized_scores_2, val_optimized_results_2 = val_optimized_evaluation_2
         val_optimized_individual_scores_2 = None
-    results["BootstrapFewShot Validation Time"] = time.time() - start_time
+    results["BootstrapFewShot Validation Time"] = round(time.time() - start_time, 2)
 
     start_time = time.time()
     print("Evaluating BootstrapFewShot optimized program on test set")
@@ -271,7 +201,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     else:
         test_optimized_scores_2, test_optimized_results_2 = test_optimized_evaluation_2
         test_optimized_individual_scores_2 = None
-    results["BootstrapFewShot Test Time"] = time.time() - start_time
+    results["BootstrapFewShot Test Time"] = round(time.time() - start_time, 2)
 
     print("Evaluation complete")
     results.update({
