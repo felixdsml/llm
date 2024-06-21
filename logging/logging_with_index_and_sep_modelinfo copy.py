@@ -6,7 +6,6 @@ from dspy.datasets import DataLoader
 from dspy.evaluate import Evaluate
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch, LabeledFewShot
 import os
-import csv
 
 # Load environment variables
 # _ = load_dotenv()
@@ -28,7 +27,8 @@ evaluator_lm = None
 
 # Base model configurations
 model_info_base = [
-    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'}
+    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} 
+    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} 
     # Add more base models here as needed
 ]
 
@@ -222,13 +222,14 @@ def serialize_complex_columns(df, columns):
 
 # def main():
 """Main function to orchestrate the model evaluation and logging."""
-number_of_samples = 20
+number_of_samples = 200
 testset = load_and_sample_dataset(number_of_samples)
 trainset, valset, testset = split_dataset(testset)
 
 all_results = []
-csv_file = "log_evaluations.csv"
-existing_df = pd.read_csv(csv_file) if os.path.exists(csv_file) else pd.DataFrame()
+# csv_file = "log_evaluations.csv"
+excel_file = "log_evaluations.xlsx"
+existing_df = pd.read_excel(excel_file) if os.path.exists(excel_file) else pd.DataFrame()
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
@@ -246,13 +247,7 @@ if all_results:
     log_df = pd.concat([existing_df, log_df], ignore_index=True) if not existing_df.empty else log_df
     print(log_df)
     # log_df.to_csv(csv_file, index=False)
-    # use unique delimiter to avoid conflicts with commas in the data, since data contains sql use writer since i want to have a limiter with more than one character e.v. "|||"
-    # Write to CSV with the unique delimiter using csv module
-    with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file, delimiter="|||")
-        writer.writerow(log_df.columns)
-        for row in log_df.itertuples(index=False, name=None):
-            writer.writerow(row)
+    log_df.to_excel(excel_file, index=False)
 
 else:
     print("No new evaluations were performed.")
