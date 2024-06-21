@@ -113,6 +113,7 @@ phoenix-env
 env-phoenix-dspy
 env-phoenix-dspy-2_5
 env-phoenix-dspy-fixed
+env-ds
 
 # Spyder project settings
 .spyderproject

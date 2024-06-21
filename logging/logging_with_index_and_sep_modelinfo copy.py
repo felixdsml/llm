@@ -28,8 +28,12 @@ evaluator_lm = None
 # Base model configurations
 model_info_base = [
     # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} 
-    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} 
-    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'} 
+    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} 
+    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
 ]
 
@@ -227,10 +231,10 @@ number_of_samples = 200
 testset = load_and_sample_dataset(number_of_samples)
 trainset, valset, testset = split_dataset(testset)
 
-all_results = []
+# all_results = []
 # csv_file = "log_evaluations.csv"
 excel_file = "log_evaluations.xlsx"
-existing_df = pd.read_excel(excel_file) if os.path.exists(excel_file) else pd.DataFrame()
+# existing_df = pd.read_excel(excel_file) if os.path.exists(excel_file) else pd.DataFrame()
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
@@ -240,18 +244,25 @@ for base_model in model_info_base:
         dspy.configure(lm=base_lm)
         
         results = evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, base_model["model"], eval_model["evaluator_model"], random_seed, number_of_samples)#, run_index)
+        #don't know why i need to create all_results first..
+        all_results = []
         all_results.append(results)
         
-# Check if there are any results in all_results
-if all_results:
-    log_df = pd.DataFrame(all_results)
-    log_df = pd.concat([existing_df, log_df], ignore_index=True) if not existing_df.empty else log_df
-    print(log_df)
-    # log_df.to_csv(csv_file, index=False)
-    log_df.to_excel(excel_file, index=False)
+        existing_df = pd.read_excel(excel_file) if os.path.exists(excel_file) else pd.DataFrame()
+        log_df = pd.DataFrame(all_results)
+        log_df = pd.concat([existing_df, log_df], ignore_index=True) if not existing_df.empty else log_df
+        log_df.to_excel(excel_file, index=False)
+        
+# # Check if there are any results in all_results
+# if all_results:
+#     log_df = pd.DataFrame(all_results)
+#     log_df = pd.concat([existing_df, log_df], ignore_index=True) if not existing_df.empty else log_df
+#     print(log_df)
+#     # log_df.to_csv(csv_file, index=False)
+#     log_df.to_excel(excel_file, index=False)
 
-else:
-    print("No new evaluations were performed.")
+# else:
+#     print("No new evaluations were performed.")
 
 # if __name__ == "__main__":
 #     main()
