@@ -30,9 +30,9 @@ model_info_base = [
     # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
     # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
     # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
+    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
     # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, -wierd timeout error
     # Add more base models here as needed
 ]
@@ -240,6 +240,9 @@ for base_model in model_info_base:
     for eval_model in model_info_eval:     
         base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
         evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        
+        # sppecial base model for openai
+        # base_lm = dspy.OpenAI(model='gpt-3.5-turbo-instruct')
 
         dspy.configure(lm=base_lm)
         
