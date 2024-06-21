@@ -1,2 +1,0 @@
-Model,Evaluator Model,Random Seed,Run Index,Validation Scores,Test Scores,Validation Scores (FewShot),Test Scores (FewShot),Validation Scores (BootstrapFewShot),Test Scores (BootstrapFewShot)
-llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest,llama3:70b,1399,1,25.0,25.0,50.0,25.0,50.0,0.0
