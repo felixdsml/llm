@@ -9,6 +9,7 @@ from dspy.teleprompt import BootstrapFewShotWithRandomSearch, LabeledFewShot, MI
 import os
 
 import re
+import time
 
 import phoenix as px
 
@@ -138,21 +139,6 @@ def debug_testset(dataset):
 
     return trainset, valset, testset
 
-# def save_large_result(result, model_name, evaluator_model_name, set_type, seed, sample_size):
-#     """Save large results to a text file and return the filename, adding an index if the file already exists."""
-#     # Clean the model names for the filename
-#     model_name = model_name.replace(":", "_").replace("-", "_")
-#     evaluator_model_name = evaluator_model_name.replace(":", "_").replace("-", "_")
-#     base_filename = f"{model_name}_{evaluator_model_name}_{seed}_{sample_size}_{set_type}"
-#     filename = f"{base_filename}.txt"
-#     index = 1
-#     # Check if the file exists and create a new filename with an ongoing index
-#     while os.path.exists(filename):
-#         filename = f"{base_filename}_{index}.txt"
-#         index += 1
-#     with open(filename, 'w') as f:
-#         f.write(str(result))
-#     return filename
 
 def save_large_result(result, model_name, evaluator_model_name, set_type, seed, sample_size):
     """Save large results to a text file in a subfolder and return the filename, adding an index if the file already exists."""
@@ -173,40 +159,6 @@ def save_large_result(result, model_name, evaluator_model_name, set_type, seed, 
         f.write(str(result))
     return filename
 
-# def save_optimized_program(optimized_program, model_name, evaluator_model_name, set_type, seed, sample_size):
-#     """
-#     Save the optimized program to a file, adding an index if the file already exists.
-    
-#     Args:
-#     optimized_program (object): The optimized program object to save.
-#     model_name (str): The name of the model.
-#     evaluator_model_name (str): The name of the evaluator model.
-#     set_type (str): The type of the dataset.
-#     seed (int): The seed value used for the experiment.
-#     sample_size (int): The sample size used for the experiment.
-#     save_path (str): The directory path where the file should be saved.
-    
-#     Returns:
-#     str: The filename where the optimized program is saved.
-#     """
-#     # Clean the model names for the filename
-#     model_name = model_name.replace(":", "_").replace("-", "_")
-#     evaluator_model_name = evaluator_model_name.replace(":", "_").replace("-", "_")
-    
-#     # Create base filename
-#     base_filename = f"{model_name}_{evaluator_model_name}_{seed}_{sample_size}_{set_type}"
-#     filename = f"{base_filename}.json"
-#     index = 1
-    
-#     # Ensure unique filename by appending index if file exists
-#     while os.path.exists(filename):
-#         filename = f"{base_filename}_{index}.json"
-#         index += 1
-    
-#     # Save the optimized program to file
-#     optimized_program.save(filename)
-    
-#     return filename
 
 def save_optimized_program(optimized_program, model_name, evaluator_model_name, set_type, seed, sample_size):
     """
@@ -251,70 +203,6 @@ class TextToSql(dspy.Signature):
     sql = dspy.OutputField(desc="SQL query")
 
 
-# # Class to check if the SQL queries match
-# class SQLMatch(dspy.Signature):
-#     sql_reference = dspy.InputField(desc="Reference SQL query")
-#     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-#     match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="Yes/No:")
-    
-# # Add custom instructions for matching
-# match_instruction = """
-# Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query. Output only 'Yes' if it matches, otherwise output only 'No'.
-# """
-
-# SQLMatch = SQLMatch.with_instructions(match_instruction)
-
-
-# # Class to check if the SQL query is correct based on the natural language query and its context
-# class SQLCorrectness(dspy.Signature):
-#     sql_prompt = dspy.InputField(desc="Natural language query")
-#     sql_context = dspy.InputField(desc="Context for the query")
-#     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-#     correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context", prefix="Yes/No:")
-    
-# # Add custom instructions for correctness
-# correctness_instruction = """
-# Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. Output only 'Yes' if it is correct, otherwise output only 'No'.
-# """
-
-# SQLCorrectness = SQLCorrectness.with_instructions(correctness_instruction)
-
-# def correctness_metric(example, pred, trace=None):
-#     """Evaluate the correctness of the predicted SQL query and if it matches the reference SQL query."""
-#     sql_prompt, sql_context, sql_reference, sql_predicted = (
-#         example.sql_prompt, 
-#         example.sql_context, 
-#         example.sql, 
-#         pred.sql
-#     )
-    
-#     print
-    
-#     match = dspy.Predict(SQLMatch)
-#     correctness = dspy.Predict(SQLCorrectness)
-    
-#     with dspy.context(lm=evaluator_lm):
-#         is_match = match(
-#             sql_reference=sql_reference, 
-#             sql_predicted=sql_predicted
-#         )
-#         is_correct = correctness(
-#             sql_prompt=sql_prompt, 
-#             sql_context=sql_context, 
-#             sql_predicted=sql_predicted
-#         )
-
-#     # Normalize the output and search for "Yes" using a case-insensitive regex
-#     match_output = is_match.match.strip()
-#     correct_output = is_correct.correct.strip()
-    
-#     match_score = re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None
-#     correct_score = re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None
-    
-#     # Encode the score in binary: 00 (0) = both wrong, 01 (1) = matches yes, correct no, 10 (2) = matches no, correct yes, 11 (3) = both correct
-#     score = (match_score << 1) | correct_score
-    
-#     return score/3# if trace is None else score == 3
 
 class SQLMatch(dspy.Signature):
     sql_reference = dspy.InputField(desc="Reference SQL query")
@@ -359,7 +247,7 @@ def match_metric(example, pred, trace=None):
         )
 
     match_output = is_match.match.strip()
-    match_score = re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None
+    match_score = int(re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None)
     
     return match_score
 
@@ -381,7 +269,7 @@ def correctness_metric(example, pred, trace=None):
         )
 
     correct_output = is_correct.correct.strip()
-    correct_score = re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None
+    correct_score = int(re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None)
     
     return correct_score
 
@@ -394,194 +282,6 @@ def combined_metric(example, pred, trace=None):
     return score / 3 # if trace is None else score == 3
 
 
-import time
-
-# def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
-#     """Evaluate the model using different optimization techniques and return the results."""
-    
-#     results = {
-#         "Model": model_name,
-#         "Evaluator Model": evaluator_model_name,
-#         "Random Seed": random_seed,
-#         "Number of Samples": number_of_samples,
-#         # "Run Index": run_index
-#     }
-    
-#     generate_sql_query = dspy.Predict(signature=TextToSql)
-
-#     total_start_time = time.time()
-
-#     # Evaluate on validation set
-#     start_time = time.time()
-#     print("Evaluating on validation set")
-#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#     val_scores, val_results = evaluate(generate_sql_query)
-#     val_time = round(time.time() - start_time, 4)
-
-#     # Evaluate on test set
-#     start_time = time.time()
-#     print("Evaluating on test set")
-#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#     test_scores, test_results = evaluate(generate_sql_query)
-#     test_time = round(time.time() - start_time, 2)
-
-#     # Optimize with LabeledFewShot and evaluate
-#     start_time = time.time()
-#     print("Optimizing with LabeledFewShot and evaluating")
-#     k = 4
-#     optimizer = LabeledFewShot(k=k)
-#     optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
-#     fewshot_optimization_time = round(time.time() - start_time, 2)
-#     save_optimized_program(optimized_program, model_name, evaluator_model_name, "fewshot", random_seed, number_of_samples)
-
-#     start_time = time.time()
-#     print("Evaluating optimized program on validation set")
-#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#     val_optimized_scores, val_optimized_results = evaluate(optimized_program)
-#     fewshot_val_time = round(time.time() - start_time, 2)
-
-#     start_time = time.time()
-#     print("Evaluating optimized program on test set")
-#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#     test_optimized_scores, test_optimized_results = evaluate(optimized_program)
-#     fewshot_test_time = round(time.time() - start_time, 2)
-
-#     # Optimize with BootstrapFewShotWithRandomSearch and evaluate
-#     start_time = time.time()
-#     print("Optimizing with BootstrapFewShotWithRandomSearch and evaluating")
-#     max_bootstrapped_demos = 2
-#     num_candidate_programs = 2
-#     optimizer2 = BootstrapFewShotWithRandomSearch(metric=correctness_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS)
-#     optimized_program_2 = optimizer2.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
-#     bootstrapfewshot_optimization_time = round(time.time() - start_time, 2)
-#     save_optimized_program(optimized_program_2, model_name, evaluator_model_name, "bootstrapfewshot", random_seed, number_of_samples)
-
-#     start_time = time.time()
-#     print("Evaluating BootstrapFewShot optimized program on validation set")
-#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#     val_optimized_scores_2, val_optimized_results_2 = evaluate(optimized_program_2)
-#     bootstrapfewshot_val_time = round(time.time() - start_time, 2)
-
-#     start_time = time.time()
-#     print("Evaluating BootstrapFewShot optimized program on test set")
-#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#     test_optimized_scores_2, test_optimized_results_2 = evaluate(optimized_program_2)
-#     bootstrapfewshot_test_time = round(time.time() - start_time, 2)
-
-#     total_time = round(time.time() - total_start_time, 2)
-
-#     print("Evaluation complete")
-#     results.update({
-#         "Total Time": total_time,
-#         "Validation Time": val_time,
-#         "Validation Scores": val_scores,
-#         "Validation Results": save_large_result(val_results, model_name, evaluator_model_name, "val", random_seed, number_of_samples),
-#         "Test Time": test_time,
-#         "Test Scores": test_scores,
-#         "Test Results": save_large_result(test_results, model_name, evaluator_model_name, "test", random_seed, number_of_samples),
-#         "Optimization Time - LabeledFewShot": fewshot_optimization_time,
-#         "Number of candidate programs - LabeledFewShot": k,
-#         "Validation Time - LabeledFewShot": fewshot_val_time,
-#         "Validation Scores - LabeledFewShot": val_optimized_scores,
-#         "Validation Results - LabeledFewShot": save_large_result(val_optimized_results, model_name, evaluator_model_name, "val_fewshot", random_seed, number_of_samples),
-#         "Test Time - LabeledFewShot": fewshot_test_time,
-#         "Test Scores - LabeledFewShot": test_optimized_scores,
-#         "Test Results - LabeledFewShot": save_large_result(test_optimized_results, model_name, evaluator_model_name, "test_fewshot", random_seed, number_of_samples),
-#         "Optimization Time - BootstrapFewShot": bootstrapfewshot_optimization_time,
-#         "Number of candidate programs - BootstrapFewShot": num_candidate_programs,
-#         "Max Bootstrapped Demos - BootstrapFewShot": max_bootstrapped_demos,
-#         "Validation Time - BootstrapFewShot": bootstrapfewshot_val_time,
-#         "Validation Scores - BootstrapFewShot": val_optimized_scores_2,
-#         "Validation Results - BootstrapFewShot": save_large_result(val_optimized_results_2, model_name, evaluator_model_name, "val_bootstrap", random_seed, number_of_samples),
-#         "Test Time - BootstrapFewShot": bootstrapfewshot_test_time,
-#         "Test Scores - BootstrapFewShot": test_optimized_scores_2,
-#         "Test Results - BootstrapFewShot": save_large_result(test_optimized_results_2, model_name, evaluator_model_name, "test_bootstrap", random_seed, number_of_samples),
-#     })
-
-#     return results
-
-# #### REFACTOR
-
-# def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
-#     """Evaluate the model using different optimization techniques and return the results."""
-    
-#     results = {
-#         "Model": model_name,
-#         "Evaluator Model": evaluator_model_name,
-#         "Random Seed": random_seed,
-#         "Number of Samples": number_of_samples,
-#     }
-    
-#     generate_sql_query = dspy.Predict(signature=TextToSql)
-
-#     def evaluate_set(devset, metric, program, label):
-#         """Evaluate a given set with the specified metric and program."""
-#         start_time = time.time()
-#         print(f"Evaluating on {label} set")
-#         evaluate = Evaluate(devset=devset, metric=metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#         scores, results = evaluate(program)
-#         eval_time = round(time.time() - start_time, 2)
-#         return scores, results, eval_time
-
-#     total_start_time = time.time()
-
-#     # Evaluate on validation and test sets
-#     val_scores, val_results, val_time = evaluate_set(valset, correctness_metric, generate_sql_query, "validation")
-#     test_scores, test_results, test_time = evaluate_set(testset, correctness_metric, generate_sql_query, "test")
-
-#     # Optimize with LabeledFewShot and evaluate
-#     start_time = time.time()
-#     print("Optimizing with LabeledFewShot and evaluating")
-#     optimizer = LabeledFewShot(k=4)
-#     optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
-#     fewshot_optimization_time = round(time.time() - start_time, 2)
-#     save_optimized_program(optimized_program, model_name, evaluator_model_name, "fewshot", random_seed, number_of_samples)
-
-#     val_optimized_scores, val_optimized_results, fewshot_val_time = evaluate_set(valset, correctness_metric, optimized_program, "optimized validation")
-#     test_optimized_scores, test_optimized_results, fewshot_test_time = evaluate_set(testset, correctness_metric, optimized_program, "optimized test")
-
-#     # Optimize with BootstrapFewShotWithRandomSearch and evaluate
-#     start_time = time.time()
-#     print("Optimizing with BootstrapFewShotWithRandomSearch and evaluating")
-#     optimizer2 = BootstrapFewShotWithRandomSearch(metric=correctness_metric, max_bootstrapped_demos=2, num_candidate_programs=2, num_threads=NUM_THREADS)
-#     optimized_program_2 = optimizer2.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
-#     bootstrapfewshot_optimization_time = round(time.time() - start_time, 2)
-#     save_optimized_program(optimized_program_2, model_name, evaluator_model_name, "bootstrapfewshot", random_seed, number_of_samples)
-
-#     val_optimized_scores_2, val_optimized_results_2, bootstrapfewshot_val_time = evaluate_set(valset, correctness_metric, optimized_program_2, "BootstrapFewShot optimized validation")
-#     test_optimized_scores_2, test_optimized_results_2, bootstrapfewshot_test_time = evaluate_set(testset, correctness_metric, optimized_program_2, "BootstrapFewShot optimized test")
-
-#     total_time = round(time.time() - total_start_time, 2)
-
-#     print("Evaluation complete")
-#     results.update({
-#         "Total Time": total_time,
-#         "Validation Time": val_time,
-#         "Validation Scores": val_scores,
-#         "Validation Results": save_large_result(val_results, model_name, evaluator_model_name, "val", random_seed, number_of_samples),
-#         "Test Time": test_time,
-#         "Test Scores": test_scores,
-#         "Test Results": save_large_result(test_results, model_name, evaluator_model_name, "test", random_seed, number_of_samples),
-#         "Optimization Time - LabeledFewShot": fewshot_optimization_time,
-#         "Number of candidate programs - LabeledFewShot": 4,
-#         "Validation Time - LabeledFewShot": fewshot_val_time,
-#         "Validation Scores - LabeledFewShot": val_optimized_scores,
-#         "Validation Results - LabeledFewShot": save_large_result(val_optimized_results, model_name, evaluator_model_name, "val_fewshot", random_seed, number_of_samples),
-#         "Test Time - LabeledFewShot": fewshot_test_time,
-#         "Test Scores - LabeledFewShot": test_optimized_scores,
-#         "Test Results - LabeledFewShot": save_large_result(test_optimized_results, model_name, evaluator_model_name, "test_fewshot", random_seed, number_of_samples),
-#         "Optimization Time - BootstrapFewShot": bootstrapfewshot_optimization_time,
-#         "Number of candidate programs - BootstrapFewShot": 2,
-#         "Max Bootstrapped Demos - BootstrapFewShot": 2,
-#         "Validation Time - BootstrapFewShot": bootstrapfewshot_val_time,
-#         "Validation Scores - BootstrapFewShot": val_optimized_scores_2,
-#         "Validation Results - BootstrapFewShot": save_large_result(val_optimized_results_2, model_name, evaluator_model_name, "val_bootstrap", random_seed, number_of_samples),
-#         "Test Time - BootstrapFewShot": bootstrapfewshot_test_time,
-#         "Test Scores - BootstrapFewShot": test_optimized_scores_2,
-#         "Test Results - BootstrapFewShot": save_large_result(test_optimized_results_2, model_name, evaluator_model_name, "test_bootstrap", random_seed, number_of_samples),
-#     })
-
-#     return results
 
 def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
     """Evaluate the model using different optimization techniques and return the results."""
@@ -597,7 +297,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         match_score, match_result = match_evaluate(program)
         correct_score, correct_result = correct_evaluate(program)
         
-        combined_score = (match_score << 1) | correct_score
+        combined_score = ((int(match_score) << 1) | int(correct_score))/3
         
         eval_time = round(time.time() - start_time, 2)
         return match_score, correct_score, combined_score, match_result, correct_result, eval_time
@@ -735,16 +435,3 @@ for base_model in model_info_base:
         
         print("finished evaluation for model: ", base_model["model"], " and evaluator: ", eval_model["evaluator_model"])
         
-# # Check if there are any results in all_results
-# if all_results:
-#     log_df = pd.DataFrame(all_results)
-#     log_df = pd.concat([existing_df, log_df], ignore_index=True) if not existing_df.empty else log_df
-#     print(log_df)
-#     # log_df.to_csv(csv_file, index=False)
-#     log_df.to_excel(excel_file, index=False)
-
-# else:
-#     print("No new evaluations were performed.")
-
-# if __name__ == "__main__":
-#     main()

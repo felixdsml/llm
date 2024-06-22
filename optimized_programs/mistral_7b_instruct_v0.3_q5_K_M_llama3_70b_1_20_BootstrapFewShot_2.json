@@ -1,0 +1,57 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "sql_prompt": "How many products in each category are available in the inventory?",
+        "sql_context": "CREATE TABLE products (product_id int, name varchar(255), category varchar(255), quantity int); INSERT INTO products (product_id, name, category, quantity) VALUES (1, 'Organic Cotton T-Shirt', 'Clothing', 100), (2, 'Regular Cotton T-Shirt', 'Clothing', 150), (3, 'Reusable Water Bottle', 'Home', 200), (4, 'LED Light Bulb', 'Electronics', 50);",
+        "rationale": "answer the given SQL prompts:\n\n1. To find the peak usage time for each day of the week, we need to group the data by day and hour, then find the maximum data_usage for each group. The following query does that:\n\n```sql\nSELECT DATE_FORMAT(usage_time, '%W') AS day_of_week, HOUR(usage_time) AS hour_of_day, MAX(data_usage) AS peak_usage FROM usage_timestamps GROUP BY day_of_week, hour_of_day;\n```\n\n2. To find the total number of digital assets issued by companies based in the United States, we need",
+        "sql": "SELECT COUNT(*) FROM digital_assets WHERE country = 'United States' AND company IS NOT NULL;\n\nReasoning: Let's think step by step in order to answer the given SQL prompts: To find the total number of digital assets issued by companies based in the United States, we need to filter the table for rows where the country is 'United States' and the company is not null (to exclude any potential missing or null values). The following query does that:\n\n```sql\nSELECT COUNT(*) FROM digital_assets WHERE country = 'United States' AND company IS NOT NULL;\n```\n\n3. To find how many products in each category are available in the"
+      },
+      {
+        "augmented": true,
+        "sql_prompt": "What is the total quantity of 'Tencel Lyocell' and 'Bamboo Viscose' fabrics in stock?",
+        "sql_context": "CREATE TABLE inventory (id INT PRIMARY KEY, fabric_name VARCHAR(50), size VARCHAR(10), quantity INT, color VARCHAR(10)); INSERT INTO inventory (id, fabric_name, size, quantity, color) VALUES (1, 'Organic Cotton', 'S', 100, 'White'); INSERT INTO inventory (id, fabric_name, size, quantity, color) VALUES (2, 'Tencel Lyocell', 'M', 75, 'Green'); INSERT INTO inventory (id, fabric_name, size, quantity, color) VALUES (3, 'Bamboo Viscose', 'L', 50, 'Natural');",
+        "rationale": "find the total quantity of 'Tencel Lyocell' and 'Bamboo Viscose' fabrics in stock. First, we need to identify the rows in the `inventory` table that contain these specific fabric names. Then, we sum up the quantities for those rows.\n\nHere is the SQL query:\n\n```sql\nSELECT SUM(quantity) AS total_quantity\nFROM inventory\nWHERE fabric_name IN ('Tencel Lyocell', 'Bamboo Viscose');\n```\n\nThis query will return a single row with the total quantity of both fabrics in stock.",
+        "sql": "Sql Prompt: What is the total quantity of 'Tencel Lyocell' and 'Bamboo Viscose' fabrics in stock?\n\nSql Context: CREATE TABLE inventory (id INT PRIMARY KEY, fabric_name VARCHAR(50), size VARCHAR(10), quantity INT, color VARCHAR(10)); INSERT INTO inventory (id, fabric_name, size, quantity, color) VALUES (1, 'Organic Cotton', 'S', 100, 'White'); INSERT INTO inventory (id, fabric_name, size, quantity, color) VALUES (2, 'Tencel Lyocell', '"
+      },
+      {
+        "sql_prompt": "What is the peak usage time for each day of the week?",
+        "sql_context": "CREATE TABLE usage_timestamps (usage_time TIMESTAMP, data_usage FLOAT); INSERT INTO usage_timestamps (usage_time, data_usage) VALUES ('2022-01-01 09:00:00', 5000), ('2022-01-01 10:00:00', 6000), ('2022-01-02 11:00:00', 7000);",
+        "sql": "SELECT DATE_FORMAT(usage_time, '%W') AS day_of_week, HOUR(usage_time) AS hour_of_day, MAX(data_usage) AS peak_usage FROM usage_timestamps GROUP BY day_of_week, hour_of_day;"
+      },
+      {
+        "sql_prompt": "How many unique service types are provided in the 'defendant_services' table?",
+        "sql_context": "CREATE TABLE defendant_services (id INT, case_number INT, defendant_name VARCHAR(255), service_type VARCHAR(255)); INSERT INTO defendant_services (id, case_number, defendant_name, service_type) VALUES (1, 1234, 'Jane Doe', 'Education');",
+        "sql": "SELECT COUNT(DISTINCT service_type) FROM defendant_services;"
+      },
+      {
+        "sql_prompt": "What is the total amount donated by each donor, ordered from highest to lowest?",
+        "sql_context": "CREATE TABLE Donors (DonorID INT, DonorName VARCHAR(50), TotalDonation DECIMAL(10,2)); INSERT INTO Donors VALUES (1, 'John Doe', 5000.00), (2, 'Jane Smith', 3500.00), (3, 'Mike Johnson', 2000.00);",
+        "sql": "SELECT DonorName, TotalDonation FROM Donors ORDER BY TotalDonation DESC;"
+      },
+      {
+        "sql_prompt": "What is the total number of digital assets issued by companies based in the United States?",
+        "sql_context": "CREATE TABLE digital_assets (id INT, name TEXT, company TEXT, country TEXT); INSERT INTO digital_assets (id, name, company, country) VALUES (1, 'ExampleAsset1', 'ExampleCompany1', 'United States');",
+        "sql": "SELECT COUNT(*) FROM digital_assets WHERE country = 'United States' AND company IS NOT NULL;"
+      },
+      {
+        "sql_prompt": "What is the total number of construction permits issued in each state?",
+        "sql_context": "CREATE TABLE PermitsByState (State VARCHAR(50), PermitCount INT); INSERT INTO PermitsByState (State, PermitCount) VALUES ('Texas', 100);",
+        "sql": "SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;"
+      },
+      {
+        "sql_prompt": "List the total number of cases for each Ethnicity in the DiversityInJustice table.",
+        "sql_context": "CREATE TABLE DiversityInJustice (JusticeID INT, Ethnicity VARCHAR(30)); CREATE TABLE JusticeCases (CaseID INT, JusticeID INT, Date DATE); INSERT INTO DiversityInJustice (JusticeID, Ethnicity) VALUES (1, 'African American'), (2, 'Hispanic'), (3, 'Asian'), (4, 'Caucasian'); INSERT INTO JusticeCases (CaseID, JusticeID, Date) VALUES (1, 1, '2021-09-01'), (2, 1, '2021-07-20'), (3, 2, '2021-08-12'), (4, 3, '2021-08-15'), (5, 3, '2021-09-01'), (6, 4, '2021-09-10');",
+        "sql": "SELECT Ethnicity, COUNT(*) as TotalCases FROM JusticeCases JOIN DiversityInJustice ON JusticeCases.JusticeID = DiversityInJustice.JusticeID GROUP BY Ethnicity;"
+      }
+    ],
+    "signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "extended_signature_prefix": "Sql:"
+  }
+}
