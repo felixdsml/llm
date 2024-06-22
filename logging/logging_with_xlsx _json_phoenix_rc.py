@@ -252,27 +252,35 @@ class TextToSql(dspy.Signature):
 class Correctness(dspy.Signature):
     sql_prompt = dspy.InputField(desc="Natural language query")
     sql_context = dspy.InputField(desc="Context for the query")
-    sql = dspy.InputField(desc="SQL query")
-    correct = dspy.OutputField(desc="Indicate whether the SQL query correctly answers the natural language query based on the given context", prefix="Yes/No:")
+    sql_reference = dspy.InputField(desc="Reference SQL query")
+    sql_predicted = dspy.InputField(desc="Predicted SQL query")
+    correct = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match and answer the Natural language query.", prefix="Yes/No:")
     
-# Add custom instructions
+# Add custom instructions for comparison
 custom_instruction = """
-Given a natural language query and its context, determine if the provided SQL query correctly answers the query based on the context. Output only 'Yes' if it is correct, otherwise output only 'No'.
+Given a natural language query, its context, a reference SQL query, and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query and correctly answers the natural language query based on the context. Output only 'Yes' if it is correct, otherwise output only 'No'.
 """
 
 Correctness = Correctness.with_instructions(custom_instruction)
 
 def correctness_metric(example, pred, trace=None):
-    
-    """Evaluate the correctness of the generated SQL query."""
-    sql_prompt, sql_context, sql = example.sql_prompt, example.sql_context, pred.sql
+    """Evaluate the correctness of the predicted SQL query compared to the reference SQL query."""
+    sql_prompt, sql_context, sql_reference, sql_predicted = (
+        example.sql_prompt, 
+        example.sql_context, 
+        example.sql, 
+        pred.sql
+    )
     correctness = dspy.Predict(Correctness)
     
     with dspy.context(lm=evaluator_lm):
-        correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql=sql)
+        correct = correctness(
+            sql_prompt=sql_prompt, 
+            sql_context=sql_context, 
+            sql_reference=sql_reference, 
+            sql_predicted=sql_predicted
+        )
 
-    # score = int(correct.correct == "Yes")
-    
     # Normalize the output and search for "Yes" using a case-insensitive regex
     correct_output = correct.correct.strip()
     is_correct = re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None
@@ -280,6 +288,7 @@ def correctness_metric(example, pred, trace=None):
     score = int(is_correct)
     
     return score if trace is None else score == 1
+
 
 class TextToSqlProgram(dspy.Module):
     def __init__(self):
