@@ -11,7 +11,7 @@ import json
 # Load environment variables
 # _ = load_dotenv()
 
-NUM_THREADS = 10
+NUM_THREADS = 16
 
 # Define generation arguments
 generation_args = {
