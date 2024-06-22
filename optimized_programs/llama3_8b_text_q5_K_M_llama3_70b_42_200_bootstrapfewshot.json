@@ -1,0 +1,93 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "sql_prompt": "Insert a new student into the graduate_students table",
+        "sql_context": "CREATE TABLE graduate_students (id INT, name TEXT, department TEXT); INSERT INTO graduate_students (id, name, department) VALUES (1, 'Alice', 'CS'), (2, 'Bob', 'Physics');",
+        "sql": "INSERT INTO graduate_students (id, name, department) VALUES (3, 'Charlie', 'Math');"
+      },
+      {
+        "sql_prompt": "What is the racial and ethnic diversity of the company?",
+        "sql_context": "CREATE TABLE employees (id INT, name VARCHAR(255), race VARCHAR(255), ethnicity VARCHAR(255)); INSERT INTO employees (id, name, race, ethnicity) VALUES (1, 'John Doe', 'White', 'Not Hispanic or Latino'), (2, 'Jane Smith', 'Asian', 'Not Hispanic or Latino'), (3, 'Alice Johnson', 'Black or African American', 'Not Hispanic or Latino'), (4, 'Bob Brown', 'Hispanic or Latino', 'Mexican'), (5, 'Charlie Davis', 'White', 'Not Hispanic or Latino');",
+        "sql": "SELECT race, COUNT(*) as num_employees, CONCAT(ROUND(COUNT(*) \/ (SELECT COUNT(*) FROM employees) * 100, 2), '%') as percent_of_employees FROM employees GROUP BY race;"
+      },
+      {
+        "sql_prompt": "What is the average salary for female managers in the financial institutions table?",
+        "sql_context": "CREATE TABLE financial_institutions (id INT PRIMARY KEY, name VARCHAR(255), type VARCHAR(255), location VARCHAR(255));",
+        "sql": "SELECT AVG(salary) FROM employee_demographics WHERE role = 'Manager' AND gender = 'Female';"
+      },
+      {
+        "sql_prompt": "How many timber harvest permits were issued in each region in 2019?",
+        "sql_context": "CREATE TABLE harvest_permits (id INT, region VARCHAR(255), issued_date DATE);",
+        "sql": "SELECT region, COUNT(*) as num_permits FROM harvest_permits WHERE EXTRACT(YEAR FROM issued_date) = 2019 GROUP BY region;"
+      },
+      {
+        "sql_prompt": "What is the total budget allocated for infrastructure in 2023, in the 'annual_budget' table?",
+        "sql_context": "CREATE TABLE annual_budget (year INT, category VARCHAR(255), budget INT); INSERT INTO annual_budget (year, category, budget) VALUES (2022, 'Education', 1000000), (2023, 'Infrastructure', 1500000);",
+        "sql": "SELECT budget FROM annual_budget WHERE year = 2023 AND category = 'Infrastructure';"
+      },
+      {
+        "sql_prompt": "What was the average number of comments per post in Oceania in the last month?",
+        "sql_context": "CREATE TABLE comments_posts(region VARCHAR(20), post_date DATE, comments INT, posts INT); INSERT INTO comments_posts(region, post_date, comments, posts) VALUES('Oceania', '2021-09-01', 10, 10), ('Oceania', '2021-09-02', 12, 12), ('Oceania', '2021-09-03', 14, 14), ('Oceania', '2021-09-04', 16, 16), ('Oceania', '2021-09-05', 18, 18), ('Oceania', '2021-09-06', 20, 20), ('Oceania', '2021-09-07', 22, 22);",
+        "sql": "SELECT AVG(comments\/posts) FROM comments_posts WHERE region = 'Oceania' AND post_date >= DATEADD(month, -1, CURRENT_DATE)"
+      },
+      {
+        "sql_prompt": "List all garments in the \"Spring 2023\" collection that are made of silk or cotton.",
+        "sql_context": "CREATE TABLE Spring2023 (garment_id INT, garment_name VARCHAR(50), material VARCHAR(50)); INSERT INTO Spring2023 (garment_id, garment_name, material) VALUES (1, 'Linen Blend Dress', 'Linen-Hemp Blend'), (2, 'Silk Top', 'Silk'), (3, 'Recycled Polyester Skirt', 'Recycled Polyester'), (4, 'Cotton Shirt', 'Cotton');",
+        "sql": "SELECT garment_name FROM Spring2023 WHERE material IN ('Silk', 'Cotton');"
+      },
+      {
+        "sql_prompt": "What is the total revenue for the 'virtual tours' feature?",
+        "sql_context": "CREATE TABLE features (id INT, name TEXT, price FLOAT); INSERT INTO features (id, name, price) VALUES (1, 'Virtual tours', 10), (2, 'Concierge service', 20), (3, 'Room service', 30);",
+        "sql": "SELECT SUM(price) FROM features WHERE name = 'Virtual tours';"
+      },
+      {
+        "sql_prompt": "Insert a new food safety inspection record for 'Burrito Bar' restaurant.",
+        "sql_context": "CREATE TABLE food_safety_inspections (restaurant_name VARCHAR(255), inspection_date DATE, score INT); INSERT INTO food_safety_inspections (restaurant_name, inspection_date, score) VALUES ('Pizza Palace', '2022-01-01', 85);",
+        "sql": "INSERT INTO food_safety_inspections (restaurant_name, inspection_date, score) VALUES ('Burrito Bar', '2022-04-01', 88);"
+      },
+      {
+        "sql_prompt": "How many players from each country are in the 'Players' table?",
+        "sql_context": "CREATE TABLE Players (PlayerID INT, Name VARCHAR(100), Country VARCHAR(50)); INSERT INTO Players (PlayerID, Name, Country) VALUES (1, 'John Doe', 'USA'), (2, 'Jane Smith', 'Canada'), (3, 'James Brown', 'England'), (4, 'Sophia Johnson', 'Germany'), (5, 'Emma White', 'USA'), (6, 'Oliver Black', 'Canada');",
+        "sql": "SELECT Country, COUNT(*) AS PlayerCount FROM Players GROUP BY Country;"
+      },
+      {
+        "sql_prompt": "What is the average price of crops grown using 'permaculture' techniques?",
+        "sql_context": "CREATE TABLE crops (id INT, name VARCHAR(20), farming_system VARCHAR(20), price DECIMAL(6,2));",
+        "sql": "SELECT AVG(price) FROM crops WHERE farming_system = 'permaculture';"
+      },
+      {
+        "sql_prompt": "What is the total number of mobile and broadband customers in the state of Florida?",
+        "sql_context": "CREATE TABLE customer_counts (id INT, location VARCHAR(50), service VARCHAR(50)); INSERT INTO customer_counts (id, location, service) VALUES (1, 'Florida', 'mobile'), (2, 'Texas', 'broadband'), (3, 'Florida', 'mobile'), (4, 'California', 'mobile');",
+        "sql": "SELECT COUNT(*) FROM customer_counts WHERE location = 'Florida';"
+      },
+      {
+        "sql_prompt": "What are the total transaction fees for each miner in the last week?",
+        "sql_context": "CREATE TABLE block_rewards (miner TEXT, block_height INTEGER, reward REAL, timestamp TIMESTAMP); INSERT INTO block_rewards (miner, block_height, reward, timestamp) VALUES ('AntPool', 1234569, 10.56, '2022-01-08 10:01:20'); INSERT INTO block_rewards (miner, block_height, reward, timestamp) VALUES ('SlushPool', 1234570, 11.34, '2022-01-09 11:02:30');",
+        "sql": "SELECT miner, SUM(reward) as total_fees FROM block_rewards WHERE timestamp >= (SELECT timestamp FROM block_rewards ORDER BY timestamp DESC LIMIT 1) - INTERVAL '1 week' GROUP BY miner;"
+      },
+      {
+        "sql_prompt": "What is the maximum sea surface temperature in the 'Indian' gyre?",
+        "sql_context": "CREATE TABLE gyres (name TEXT, max_temp REAL); INSERT INTO gyres (name, max_temp) VALUES ('North Atlantic', 21.5), ('South Atlantic', 20.3), ('Indian', 28.2), ('North Pacific', 16.1), ('South Pacific', 19.9);",
+        "sql": "SELECT max_temp FROM gyres WHERE name = 'Indian';"
+      },
+      {
+        "sql_prompt": "What is the percentage of sales by designer?",
+        "sql_context": "CREATE TABLE ClothingSales (ItemID INT, ItemName TEXT, Designer TEXT, Quantity INT); INSERT INTO ClothingSales (ItemID, ItemName, Designer, Quantity) VALUES (1, 'Top', 'DesignerA', 250), (2, 'Pants', 'DesignerB', 300), (3, 'Dress', 'DesignerC', 150);",
+        "sql": "SELECT Designer, 100.0 * SUM(Quantity) \/ (SELECT SUM(Quantity) FROM ClothingSales) as PercentageOfSales FROM ClothingSales GROUP BY Designer;"
+      },
+      {
+        "sql_prompt": "Update the size of the 'Serengeti Plains' habitat in the 'habitat_preservation' table",
+        "sql_context": "CREATE TABLE habitat_preservation (id INT PRIMARY KEY, location VARCHAR(50), size_acres FLOAT, preservation_status VARCHAR(50), protected_species VARCHAR(50));",
+        "sql": "UPDATE habitat_preservation SET size_acres = 5700000.0 WHERE location = 'Serengeti Plains';"
+      }
+    ],
+    "signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "extended_signature_prefix": "Sql:"
+  }
+}
