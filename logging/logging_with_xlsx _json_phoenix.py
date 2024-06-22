@@ -406,7 +406,7 @@ excel_file = "log_evaluations.xlsx"
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
         base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
-        evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], timeout_s=180, max_tokens=50)
         
         model_name = base_model["model"].replace(":", "_").replace("-", "_").replace(".", "_")
         evaluator_model_name = eval_model["evaluator_model"].replace(":", "_").replace("-", "_").replace(".", "_")
