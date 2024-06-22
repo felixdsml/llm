@@ -4,7 +4,7 @@ import pandas as pd
 # from dotenv import load_dotenv
 from dspy.datasets import DataLoader
 from dspy.evaluate import Evaluate
-from dspy.teleprompt import BootstrapFewShotWithRandomSearch, LabeledFewShot
+from dspy.teleprompt import BootstrapFewShotWithRandomSearch, LabeledFewShot, MIPRO
 import os
 import json
 
@@ -113,6 +113,41 @@ def save_large_result(result, model_name, evaluator_model_name, set_type, seed, 
         f.write(str(result))
     return filename
 
+def save_optimized_program(optimized_program, model_name, evaluator_model_name, set_type, seed, sample_size):
+    """
+    Save the optimized program to a file, adding an index if the file already exists.
+    
+    Args:
+    optimized_program (object): The optimized program object to save.
+    model_name (str): The name of the model.
+    evaluator_model_name (str): The name of the evaluator model.
+    set_type (str): The type of the dataset.
+    seed (int): The seed value used for the experiment.
+    sample_size (int): The sample size used for the experiment.
+    save_path (str): The directory path where the file should be saved.
+    
+    Returns:
+    str: The filename where the optimized program is saved.
+    """
+    # Clean the model names for the filename
+    model_name = model_name.replace(":", "_").replace("-", "_")
+    evaluator_model_name = evaluator_model_name.replace(":", "_").replace("-", "_")
+    
+    # Create base filename
+    base_filename = f"{model_name}_{evaluator_model_name}_{seed}_{sample_size}_{set_type}"
+    filename = f"{base_filename}.json"
+    index = 1
+    
+    # Ensure unique filename by appending index if file exists
+    while os.path.exists(filename):
+        filename = f"optimized_programs\{base_filename}_{index}.json"
+        index += 1
+    
+    # Save the optimized program to file
+    optimized_program.save(filename)
+    
+    return filename
+
 class TextToSql(dspy.Signature):
     sql_prompt = dspy.InputField(desc="Natural language query")
     sql_context = dspy.InputField(desc="Context for the query")
@@ -181,6 +216,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     optimizer = LabeledFewShot(k=k)
     optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
     fewshot_optimization_time = round(time.time() - start_time, 2)
+    save_optimized_program(optimized_program, model_name, evaluator_model_name, "fewshot", random_seed, number_of_samples)
 
     start_time = time.time()
     print("Evaluating optimized program on validation set")
@@ -202,6 +238,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     optimizer2 = BootstrapFewShotWithRandomSearch(metric=correctness_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS)
     optimized_program_2 = optimizer2.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
     bootstrapfewshot_optimization_time = round(time.time() - start_time, 2)
+    save_optimized_program=save_optimized_program(optimized_program_2, model_name, evaluator_model_name, "bootstrapfewshot", random_seed, number_of_samples)
 
     start_time = time.time()
     print("Evaluating BootstrapFewShot optimized program on validation set")
