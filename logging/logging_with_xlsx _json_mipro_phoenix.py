@@ -57,17 +57,17 @@ evaluator_lm = None
 
 # Base model configurations
 model_info_base = [
-    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# -wierd timeout error
-    {"model": "command-r", "base_url": 'http://localhost:11435'},
-    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "aya:35b", "base_url": 'http://localhost:11435'},
-    {"model": "qwen2:72b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
+    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
+    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    # # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
+    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# -wierd timeout error
+    # {"model": "command-r", "base_url": 'http://localhost:11435'},
+    # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "aya:35b", "base_url": 'http://localhost:11435'},
+    # {"model": "qwen2:72b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
     
     
@@ -86,7 +86,7 @@ random_seed = 1
 random.seed(random_seed)
 
 # Number of samples to generate
-number_of_samples = 200
+number_of_samples = 20
 
 
 
@@ -285,6 +285,110 @@ class TextToSqlProgram(dspy.Module):
 
 import time
 
+# def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
+#     """Evaluate the model using different optimization techniques and return the results."""
+    
+#     results = {
+#         "Model": model_name,
+#         "Evaluator Model": evaluator_model_name,
+#         "Random Seed": random_seed,
+#         "Number of Samples": number_of_samples,
+#         # "Run Index": run_index
+#     }
+    
+#     generate_sql_query = dspy.Predict(signature=TextToSql)
+
+#     total_start_time = time.time()
+
+#     # Evaluate on validation set
+#     start_time = time.time()
+#     print("Evaluating on validation set")
+#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+#     val_scores, val_results = evaluate(generate_sql_query)
+#     val_time = round(time.time() - start_time, 4)
+
+#     # Evaluate on test set
+#     start_time = time.time()
+#     print("Evaluating on test set")
+#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+#     test_scores, test_results = evaluate(generate_sql_query)
+#     test_time = round(time.time() - start_time, 2)
+
+#     # Optimize with LabeledFewShot and evaluate
+#     start_time = time.time()
+#     print("Optimizing with LabeledFewShot and evaluating")
+#     k = 4
+#     optimizer = LabeledFewShot(k=k)
+#     optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
+#     fewshot_optimization_time = round(time.time() - start_time, 2)
+#     save_optimized_program(optimized_program, model_name, evaluator_model_name, "fewshot", random_seed, number_of_samples)
+
+#     start_time = time.time()
+#     print("Evaluating optimized program on validation set")
+#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+#     val_optimized_scores, val_optimized_results = evaluate(optimized_program)
+#     fewshot_val_time = round(time.time() - start_time, 2)
+
+#     start_time = time.time()
+#     print("Evaluating optimized program on test set")
+#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+#     test_optimized_scores, test_optimized_results = evaluate(optimized_program)
+#     fewshot_test_time = round(time.time() - start_time, 2)
+
+#     # Optimize with BootstrapFewShotWithRandomSearch and evaluate
+#     start_time = time.time()
+#     print("Optimizing with BootstrapFewShotWithRandomSearch and evaluating")
+#     max_bootstrapped_demos = 2
+#     num_candidate_programs = 2
+#     optimizer2 = BootstrapFewShotWithRandomSearch(metric=correctness_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS)
+#     optimized_program_2 = optimizer2.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
+#     bootstrapfewshot_optimization_time = round(time.time() - start_time, 2)
+#     save_optimized_program(optimized_program_2, model_name, evaluator_model_name, "bootstrapfewshot", random_seed, number_of_samples)
+
+#     start_time = time.time()
+#     print("Evaluating BootstrapFewShot optimized program on validation set")
+#     evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+#     val_optimized_scores_2, val_optimized_results_2 = evaluate(optimized_program_2)
+#     bootstrapfewshot_val_time = round(time.time() - start_time, 2)
+
+#     start_time = time.time()
+#     print("Evaluating BootstrapFewShot optimized program on test set")
+#     evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+#     test_optimized_scores_2, test_optimized_results_2 = evaluate(optimized_program_2)
+#     bootstrapfewshot_test_time = round(time.time() - start_time, 2)
+
+#     total_time = round(time.time() - total_start_time, 2)
+
+#     print("Evaluation complete")
+#     results.update({
+#         "Total Time": total_time,
+#         "Validation Time": val_time,
+#         "Validation Scores": val_scores,
+#         "Validation Results": save_large_result(val_results, model_name, evaluator_model_name, "val", random_seed, number_of_samples),
+#         "Test Time": test_time,
+#         "Test Scores": test_scores,
+#         "Test Results": save_large_result(test_results, model_name, evaluator_model_name, "test", random_seed, number_of_samples),
+#         "Optimization Time - LabeledFewShot": fewshot_optimization_time,
+#         "Number of candidate programs - LabeledFewShot": k,
+#         "Validation Time - LabeledFewShot": fewshot_val_time,
+#         "Validation Scores - LabeledFewShot": val_optimized_scores,
+#         "Validation Results - LabeledFewShot": save_large_result(val_optimized_results, model_name, evaluator_model_name, "val_fewshot", random_seed, number_of_samples),
+#         "Test Time - LabeledFewShot": fewshot_test_time,
+#         "Test Scores - LabeledFewShot": test_optimized_scores,
+#         "Test Results - LabeledFewShot": save_large_result(test_optimized_results, model_name, evaluator_model_name, "test_fewshot", random_seed, number_of_samples),
+#         "Optimization Time - BootstrapFewShot": bootstrapfewshot_optimization_time,
+#         "Number of candidate programs - BootstrapFewShot": num_candidate_programs,
+#         "Max Bootstrapped Demos - BootstrapFewShot": max_bootstrapped_demos,
+#         "Validation Time - BootstrapFewShot": bootstrapfewshot_val_time,
+#         "Validation Scores - BootstrapFewShot": val_optimized_scores_2,
+#         "Validation Results - BootstrapFewShot": save_large_result(val_optimized_results_2, model_name, evaluator_model_name, "val_bootstrap", random_seed, number_of_samples),
+#         "Test Time - BootstrapFewShot": bootstrapfewshot_test_time,
+#         "Test Scores - BootstrapFewShot": test_optimized_scores_2,
+#         "Test Results - BootstrapFewShot": save_large_result(test_optimized_results_2, model_name, evaluator_model_name, "test_bootstrap", random_seed, number_of_samples),
+#     })
+
+#     return results
+
 def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
     """Evaluate the model using different optimization techniques and return the results."""
     
@@ -357,6 +461,38 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     test_optimized_scores_2, test_optimized_results_2 = evaluate(optimized_program_2)
     bootstrapfewshot_test_time = round(time.time() - start_time, 2)
 
+    # Optimize with MIPRO and evaluate
+    start_time = time.time()
+    print("Optimizing with MIPRO and evaluating")
+    prompt_model = base_lm  # Model to generate prompts
+    task_model = evaluator_lm  # Model that solves the task
+    num_new_prompts_generated = 10  # Adjust as needed
+    prompt_generation_temperature = 0.7  # Adjust as needed
+    optimizer3 = MIPRO(
+        prompt_model=prompt_model,
+        task_model=task_model,
+        metric=correctness_metric,
+        num_candidates=num_new_prompts_generated,
+        init_temperature=prompt_generation_temperature
+    )
+
+    kwargs = dict(num_threads=NUM_THREADS, display_progress=True, display_table=0)
+    optimized_program_3 = optimizer3.compile(your_dspy_program=TextToSqlProgram(), trainset=trainset, num_trials=100, max_bootstrapped_demos=3, max_labeled_demos=5, eval_kwargs=kwargs)
+    mipro_optimization_time = round(time.time() - start_time, 2)
+    save_optimized_program(optimized_program_3, model_name, evaluator_model_name, "mipro", random_seed, number_of_samples)
+
+    start_time = time.time()
+    print("Evaluating MIPRO optimized program on validation set")
+    evaluate = Evaluate(devset=valset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+    val_optimized_scores_3, val_optimized_results_3 = evaluate(optimized_program_3)
+    mipro_val_time = round(time.time() - start_time, 2)
+
+    start_time = time.time()
+    print("Evaluating MIPRO optimized program on test set")
+    evaluate = Evaluate(devset=testset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
+    test_optimized_scores_3, test_optimized_results_3 = evaluate(optimized_program_3)
+    mipro_test_time = round(time.time() - start_time, 2)
+
     total_time = round(time.time() - total_start_time, 2)
 
     print("Evaluation complete")
@@ -385,9 +521,17 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Test Time - BootstrapFewShot": bootstrapfewshot_test_time,
         "Test Scores - BootstrapFewShot": test_optimized_scores_2,
         "Test Results - BootstrapFewShot": save_large_result(test_optimized_results_2, model_name, evaluator_model_name, "test_bootstrap", random_seed, number_of_samples),
+        "Optimization Time - MIPRO": mipro_optimization_time,
+        "Validation Time - MIPRO": mipro_val_time,
+        "Validation Scores - MIPRO": val_optimized_scores_3,
+        "Validation Results - MIPRO": save_large_result(val_optimized_results_3, model_name, evaluator_model_name, "val_mipro", random_seed, number_of_samples),
+        "Test Time - MIPRO": mipro_test_time,
+        "Test Scores - MIPRO": test_optimized_scores_3,
+        "Test Results - MIPRO": save_large_result(test_optimized_results_3, model_name, evaluator_model_name, "test_mipro", random_seed, number_of_samples),
     })
 
     return results
+
 
 
 

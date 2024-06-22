@@ -1,0 +1,12 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "extended_signature_prefix": "Sql:"
+  }
+}
