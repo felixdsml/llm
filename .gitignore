@@ -132,3 +132,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Phoenix database
+phoenix/phoenix_data/

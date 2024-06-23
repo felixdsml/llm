@@ -1,0 +1,93 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "sql_prompt": "What is the average CO2 emission reduction of green building projects in the 'GreenBuildingProjects' table, grouped by reduction_type?",
+        "sql_context": "CREATE TABLE GreenBuildingProjects (id INT, reduction_type VARCHAR(50), co2_reduction FLOAT); INSERT INTO GreenBuildingProjects (id, reduction_type, co2_reduction) VALUES (1, 'Insulation', 50.0), (2, 'Lighting', 75.0), (3, 'Insulation', 60.0);",
+        "sql": "SELECT reduction_type, AVG(co2_reduction) FROM GreenBuildingProjects GROUP BY reduction_type;"
+      },
+      {
+        "sql_prompt": "How many marine species are affected by ocean acidification?",
+        "sql_context": "CREATE TABLE species_impact (id INTEGER, name VARCHAR(255), species VARCHAR(255), affected_by_acidification BOOLEAN);",
+        "sql": "SELECT COUNT(*) FROM species_impact WHERE affected_by_acidification = TRUE;"
+      },
+      {
+        "sql_prompt": "How many unique service types are provided in the 'defendant_services' table?",
+        "sql_context": "CREATE TABLE defendant_services (id INT, case_number INT, defendant_name VARCHAR(255), service_type VARCHAR(255)); INSERT INTO defendant_services (id, case_number, defendant_name, service_type) VALUES (1, 1234, 'Jane Doe', 'Education');",
+        "sql": "SELECT COUNT(DISTINCT service_type) FROM defendant_services;"
+      },
+      {
+        "sql_prompt": "What is the total number of articles published by each author in a specific year and month from the 'investigative_reports' table?",
+        "sql_context": "CREATE TABLE investigative_reports (id INT, title VARCHAR(255), author VARCHAR(255), publication_date DATE);",
+        "sql": "SELECT author, EXTRACT(YEAR FROM publication_date) as year, EXTRACT(MONTH FROM publication_date) as month, COUNT(*) as total_articles FROM investigative_reports WHERE EXTRACT(YEAR FROM publication_date) = 2021 AND EXTRACT(MONTH FROM publication_date) = 12 GROUP BY author, year, month;"
+      },
+      {
+        "sql_prompt": "What are the green building certifications in France?",
+        "sql_context": "CREATE TABLE GreenBuildings (id INT, name VARCHAR(50), city VARCHAR(50), state VARCHAR(50), country VARCHAR(50), certification VARCHAR(50)); INSERT INTO GreenBuildings (id, name, city, state, country, certification) VALUES (3, 'GreenHaus', 'Berlin', 'Berlin', 'Germany', 'DGNB Gold');",
+        "sql": "SELECT g.certification FROM GreenBuildings g WHERE g.country = 'France';"
+      },
+      {
+        "sql_prompt": "How many tunnels are there in New York with a length greater than 5 miles?",
+        "sql_context": "CREATE TABLE Tunnels (id INT, name TEXT, location TEXT, state TEXT, length FLOAT); INSERT INTO Tunnels (id, name, location, state, length) VALUES (1, 'Tunnel A', 'Location A', 'New York', 7.5), (2, 'Tunnel B', 'Location B', 'New Jersey', 4.5);",
+        "sql": "SELECT COUNT(*) FROM Tunnels WHERE state = 'New York' AND length > 5;"
+      },
+      {
+        "sql_prompt": "Which autonomous driving research studies were conducted in Japan?",
+        "sql_context": "CREATE TABLE Research (StudyID int, StudyName varchar(50), Location varchar(50)); INSERT INTO Research (StudyID, StudyName, Location) VALUES (1, 'Autonomous Driving in Cities', 'Japan'), (2, 'Impact of Autonomous Driving on Traffic', 'USA'), (3, 'Safety of Autonomous Vehicles', 'Germany');",
+        "sql": "SELECT StudyName FROM Research WHERE Location = 'Japan';"
+      },
+      {
+        "sql_prompt": "Delete records from the 'resource_depletion' table where the 'resource_type' is 'Coal'",
+        "sql_context": "CREATE TABLE resource_depletion (id INT, resource_type VARCHAR(20), quantity INT, depletion_date DATE); INSERT INTO resource_depletion (id, resource_type, quantity, depletion_date) VALUES (1, 'Coal', 1000, '2020-01-01'), (2, 'Iron Ore', 500, '2019-12-31'), (3, 'Coal', 1500, '2018-12-31');",
+        "sql": "DELETE FROM resource_depletion WHERE resource_type = 'Coal';"
+      },
+      {
+        "sql_prompt": "Identify the artworks with the earliest creation year for each art movement.",
+        "sql_context": "CREATE TABLE Movements (MovementID INT, Name VARCHAR(50), OriginYear INT); INSERT INTO Movements (MovementID, Name, OriginYear) VALUES (1, 'Impressionism', 1874); INSERT INTO Movements (MovementID, Name, OriginYear) VALUES (2, 'Cubism', 1907);",
+        "sql": "SELECT A.Title, M.Name FROM Artworks A JOIN Movements M ON A.ArtMovement = M.Name WHERE A.Year = (SELECT MIN(Year) FROM Artworks WHERE ArtMovement = M.Name) GROUP BY M.Name;"
+      },
+      {
+        "sql_prompt": "Add a new vessel 'Yamato' with maximum speed 32.7 knots to the 'vessel_performance' table",
+        "sql_context": "CREATE TABLE IF NOT EXISTS vessel_performance (id INT PRIMARY KEY, vessel_name VARCHAR(255), maximum_speed DECIMAL(5,2));",
+        "sql": "INSERT INTO vessel_performance (id, vessel_name, maximum_speed) VALUES (1, 'Yamato', 32.7);"
+      },
+      {
+        "sql_prompt": "Rank customers by total deposits in Shariah-compliant accounts, with ties given the same rank.",
+        "sql_context": "CREATE TABLE deposits (customer_id INT, account_type VARCHAR(20), balance DECIMAL(10,2), deposit_date DATE);",
+        "sql": "SELECT customer_id, RANK() OVER (ORDER BY SUM(balance) DESC) as deposit_rank FROM deposits WHERE account_type = 'Shariah-compliant' GROUP BY customer_id;"
+      },
+      {
+        "sql_prompt": "Identify the number of ethical labor violations for suppliers located in Spain and Portugal.",
+        "sql_context": "CREATE TABLE suppliers (supplier_id INT, supplier_location VARCHAR(255), num_violations INT);",
+        "sql": "SELECT COUNT(*) FROM suppliers WHERE supplier_location IN ('Spain', 'Portugal') AND num_violations > 0;"
+      },
+      {
+        "sql_prompt": "What is the maximum daily investment for each client?",
+        "sql_context": "CREATE TABLE daily_investments (client_id INT, date DATE, investment FLOAT); INSERT INTO daily_investments (client_id, date, investment) VALUES (1, '2022-01-01', 1000.00), (1, '2022-01-02', 2000.00), (2, '2022-01-01', 3000.00), (2, '2022-01-02', 4000.00);",
+        "sql": "SELECT client_id, MAX(investment) OVER (PARTITION BY client_id ORDER BY client_id) as max_daily_investment FROM daily_investments;"
+      },
+      {
+        "sql_prompt": "What is the name of each military innovation and the year it was developed by countries in the BRICS?",
+        "sql_context": "CREATE TABLE military_innovation (name VARCHAR(50), country VARCHAR(50), year INT); INSERT INTO military_innovation (name, country, year) VALUES ('Stealth Fighter', 'China', 2010), ('Cyber Warfare Unit', 'Russia', 2012), ('Stealth Frigate', 'India', 2014), ('Robot Soldier', 'Brazil', 2015), ('Smart Rifle', 'South Africa', 2016);",
+        "sql": "SELECT mi.name, mi.year FROM military_innovation mi INNER JOIN (SELECT DISTINCT country FROM military_innovation) mic ON mi.country = mic.country;"
+      },
+      {
+        "sql_prompt": "What is the average mental health score of students for each district, ordered by the average score?",
+        "sql_context": "CREATE TABLE districts (district_id INT, district_name VARCHAR(50)); INSERT INTO districts VALUES (1, 'District A'), (2, 'District B'), (3, 'District C'); CREATE TABLE student_mental_health (student_id INT, district_id INT, mental_health_score INT); INSERT INTO student_mental_health VALUES (1, 1, 80), (2, 1, 90), (3, 2, 70), (4, 2, 60), (5, 3, 95), (6, 3, 85);",
+        "sql": "SELECT district_id, AVG(mental_health_score) as avg_score FROM student_mental_health GROUP BY district_id ORDER BY avg_score DESC;"
+      },
+      {
+        "sql_prompt": "Find the number of events attended by each individual in 2021",
+        "sql_context": "CREATE TABLE event_attendance (id INT, individual_id INT, event_year INT);INSERT INTO event_attendance (id, individual_id, event_year) VALUES (1, 1, 2021), (2, 2, 2021), (3, 1, 2021);",
+        "sql": "SELECT individual_id, COUNT(*) OVER (PARTITION BY individual_id) AS events_attended_by_each_individual FROM event_attendance WHERE event_year = 2021 ORDER BY individual_id;"
+      }
+    ],
+    "signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "extended_signature_prefix": "Sql:"
+  }
+}

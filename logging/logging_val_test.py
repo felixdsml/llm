@@ -59,18 +59,18 @@ evaluator_lm = None
 
 # Base model configurations
 model_info_base = [
-    {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
     # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
     # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    # # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# -wierd timeout error
-    # {"model": "command-r", "base_url": 'http://localhost:11435'},
-    # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "aya:35b", "base_url": 'http://localhost:11435'},
-    # {"model": "qwen2:72b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, #UnicodeEncodeError: 'charmap' codec can't encode character '\u0430' in position 49744: character maps to <undefined>
+    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# -wierd timeout error
+    {"model": "command-r", "base_url": 'http://localhost:11435'},
+    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "aya:35b", "base_url": 'http://localhost:11435'},
+    {"model": "qwen2:72b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
     # Add more base models here as needed
 ]
 
@@ -86,7 +86,7 @@ random_seed = 1
 random.seed(random_seed)
 
 # Number of samples to generate
-number_of_samples = 20
+number_of_samples = 200
 
 
 
@@ -155,7 +155,8 @@ def save_large_result(result, model_name, evaluator_model_name, set_type, seed, 
     while os.path.exists(filename):
         filename = os.path.join("logs", f"{base_filename}_{index}.txt")
         index += 1
-    with open(filename, 'w') as f:
+
+    with open(filename, 'w', encoding='utf-8') as f:
         f.write(str(result))
     return filename
 
