@@ -1,0 +1,97 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "sql_prompt": "Identify the number of UNESCO World Heritage sites in Asia with virtual tourism offerings.",
+        "sql_context": "CREATE TABLE world_heritage_sites (site_id INT, site_name TEXT, country TEXT, has_virtual_tour BOOLEAN); INSERT INTO world_heritage_sites (site_id, site_name, country, has_virtual_tour) VALUES (1, 'Angkor Wat', 'Cambodia', true), (2, 'Forbidden City', 'China', false), (3, 'Taj Mahal', 'India', true);",
+        "rationale": "Here's the solution for the given SQL prompts:\n\n1. The query should return the sum of costs for the infrastructure projects in India completed between 2021 and 2022. The SQL code to achieve this is:\n```sql\nSELECT SUM(cost) FROM infrastructure_projects WHERE country = 'India' AND completion_year BETWEEN 2021 AND 2022;\n```\n\n2. For the second prompt, the query should return the total number of financial capability training sessions conducted in Germany in the first quarter of 2022. The correct SQL code is:\n```sql\nSELECT SUM(sessions) FROM financial_capability_training WHERE quarter = 1 AND year",
+        "sql": "Sql Prompt: Identify the number of UNESCO World Heritage sites in Asia that have virtual tourism offerings.\n\nSql Context: A table world_heritage_sites contains columns site_id, site_name, country, and has_virtual_tour. It holds information about different UNESCO World Heritage sites and whether they offer virtual tours.\n\nReasoning: To determine the count of Asian sites with virtual tourism, we'll filter the data based on the 'has_virtual_tour' column and the countries in Asia. The SQL query will select from the world_heritage_sites table where the country is in Asia and the has_virtual_tour is true. \n\nSql:\n```sql\nSELECT COUNT(*) \nFROM world"
+      },
+      {
+        "augmented": true,
+        "sql_prompt": "What is the number of companies founded by immigrants each year?",
+        "sql_context": "CREATE TABLE founders (founder_id INT, company_id INT, immigrant BOOLEAN); CREATE TABLE companies (company_id INT, founding_year INT); INSERT INTO founders (founder_id, company_id, immigrant) VALUES (1, 1, true), (2, 2, false), (3, 3, true), (4, 4, false); INSERT INTO companies (company_id, founding_year) VALUES (1, 2018), (2, 2017), (3, 2019), (4, 2018);",
+        "rationale": "Here are the SQL queries and their corresponding answers based on the provided prompts:\n\n1. Query: SELECT SUM(cost) FROM infrastructure_projects WHERE country = 'India' AND completion_year BETWEEN 2021 AND 2022;\nAnswer: The total cost of the infrastructure projects in India completed between 2021 and 2022 is $2,500,000.\n\n2. Query: SELECT COUNT(*) FROM financial_capability_training WHERE quarter = 1 AND year = 2022 AND country = 'Germany';\nAnswer: There were a total of 55 financial capability training sessions conducted in Germany in the first quarter of 202",
+        "sql": "Sql Prompt: What is the number of companies founded by immigrants each year?\n\nSql Context: We have two tables, founders and companies. The founders table indicates whether each founder is an immigrant or not, and the companies table has the founding year of each company. We need to find the count of companies founded by immigrants annually.\n\nReasoning: To retrieve the required information, we need to join the founders and companies tables using their respective IDs and filter the data based on the immigrant column in the founders table. Here's the SQL query to achieve this:\nSql:\n```sql\nSELECT \n    COUNT(f.company_id),\n    c.founding_year\nFROM \n    founders f\nJOIN \n    companies c ON f."
+      },
+      {
+        "sql_prompt": "How many investments were made in the 'Africa' region in Q4 2021?",
+        "sql_context": "CREATE TABLE investments (id INT, region VARCHAR(20), date DATE); INSERT INTO investments (id, region, date) VALUES (1, 'Asia-Pacific', '2021-01-05'), (2, 'Europe', '2021-02-10'), (3, 'Asia-Pacific', '2021-03-25'), (4, 'Africa', '2021-10-15'), (5, 'Europe', '2021-11-30'), (6, 'Africa', '2021-12-12');",
+        "sql": "SELECT COUNT(*) FROM investments WHERE region = 'Africa' AND date BETWEEN '2021-10-01' AND '2021-12-31';"
+      },
+      {
+        "sql_prompt": "What is the minimum number of passengers for shared autonomous vehicles in District 3?",
+        "sql_context": "CREATE TABLE shared_autonomous_vehicles (vehicle_id INT, passengers INT, district INT); INSERT INTO shared_autonomous_vehicles (vehicle_id, passengers, district) VALUES (301, 6, 3), (302, 4, 3), (303, 7, 4);",
+        "sql": "SELECT MIN(passengers) FROM shared_autonomous_vehicles WHERE district = 3;"
+      },
+      {
+        "sql_prompt": "What is the average mental health score of students for each district, ordered by the average score?",
+        "sql_context": "CREATE TABLE districts (district_id INT, district_name VARCHAR(50)); INSERT INTO districts VALUES (1, 'District A'), (2, 'District B'), (3, 'District C'); CREATE TABLE student_mental_health (student_id INT, district_id INT, mental_health_score INT); INSERT INTO student_mental_health VALUES (1, 1, 80), (2, 1, 90), (3, 2, 70), (4, 2, 60), (5, 3, 95), (6, 3, 85);",
+        "sql": "SELECT district_id, AVG(mental_health_score) as avg_score FROM student_mental_health GROUP BY district_id ORDER BY avg_score DESC;"
+      },
+      {
+        "sql_prompt": "Which organic cosmetic products were sold by suppliers with a sustainability score of 90 or higher and have a revenue of over $1000?",
+        "sql_context": "CREATE TABLE suppliers (id INT PRIMARY KEY, name VARCHAR(100), product VARCHAR(100), country VARCHAR(100), sustainability_score INT); CREATE TABLE cosmetics_sales (id INT PRIMARY KEY, product VARCHAR(100), quantity INT, revenue FLOAT, supplier_id INT, FOREIGN KEY (supplier_id) REFERENCES suppliers(id)); CREATE TABLE cosmetics (id INT PRIMARY KEY, product VARCHAR(100), organic BOOLEAN);",
+        "sql": "SELECT cs.product FROM cosmetics_sales cs JOIN suppliers s ON cs.supplier_id = s.id JOIN cosmetics c ON cs.product = c.product WHERE c.organic = TRUE AND s.sustainability_score >= 90 AND cs.revenue > 1000;"
+      },
+      {
+        "sql_prompt": "What is the average number of autonomous vehicle research studies conducted annually in Germany?",
+        "sql_context": "CREATE TABLE ResearchStudies (Id INT, Title VARCHAR(100), Country VARCHAR(50), Year INT, IsAutonomous BOOLEAN); INSERT INTO ResearchStudies (Id, Title, Country, Year, IsAutonomous) VALUES (1, 'Autonomous Vehicle Safety Testing', 'Germany', 2015, true), (2, 'AD Research Study', 'Germany', 2016, true), (3, 'AV Research Study', 'Germany', 2018, true);",
+        "sql": "SELECT AVG(Year) FROM ResearchStudies WHERE Country = 'Germany' AND IsAutonomous = true;"
+      },
+      {
+        "sql_prompt": "Which incident response policies were implemented in Asia, and what is the rank of each policy based on the number of incidents it covers?",
+        "sql_context": "CREATE TABLE incidents (id INT, date DATE, category VARCHAR(20), source_ip VARCHAR(15), target_ip VARCHAR(15)); CREATE TABLE policies (id INT, date DATE, type VARCHAR(20), region VARCHAR(30)); INSERT INTO incidents (id, date, category, source_ip, target_ip) VALUES (1, '2021-01-01', 'malware', '192.168.1.100', '8.8.8.8'); INSERT INTO policies (id, date, type, region) VALUES (1, '2021-01-01', 'incident response', 'Asia');",
+        "sql": "SELECT policies.type, RANK() OVER (ORDER BY incident_count DESC) as policy_rank FROM (SELECT policy.type, COUNT(*) as incident_count FROM incidents JOIN policies ON incidents.date = policies.date WHERE policies.region = 'Asia' GROUP BY policy.type) as subquery JOIN policies ON policies.type = subquery.type;"
+      },
+      {
+        "sql_prompt": "Identify the artworks with the earliest creation year for each art movement.",
+        "sql_context": "CREATE TABLE Movements (MovementID INT, Name VARCHAR(50), OriginYear INT); INSERT INTO Movements (MovementID, Name, OriginYear) VALUES (1, 'Impressionism', 1874); INSERT INTO Movements (MovementID, Name, OriginYear) VALUES (2, 'Cubism', 1907);",
+        "sql": "SELECT A.Title, M.Name FROM Artworks A JOIN Movements M ON A.ArtMovement = M.Name WHERE A.Year = (SELECT MIN(Year) FROM Artworks WHERE ArtMovement = M.Name) GROUP BY M.Name;"
+      },
+      {
+        "sql_prompt": "What are the names and production dates of garments made from fabrics with a sustainability score over 70, produced after 2021-01-01?",
+        "sql_context": "CREATE TABLE fabrics (id INT, name VARCHAR(50), type VARCHAR(50), sustainability_score INT); INSERT INTO fabrics (id, name, type, sustainability_score) VALUES (1, 'Organic Linen', 'Natural', 80); INSERT INTO fabrics (id, name, type, sustainability_score) VALUES (2, 'Recycled Nylon', 'Synthetic', 72);",
+        "sql": "SELECT garments.name, garments.production_date FROM garments JOIN fabrics ON garments.fabric_id = fabrics.id WHERE fabrics.sustainability_score > 70 AND garments.production_date > '2021-01-01';"
+      },
+      {
+        "sql_prompt": "What is the total mass of all spacecraft manufactured by SpaceX?",
+        "sql_context": "CREATE TABLE Spacecraft (SpacecraftID INT, SpacecraftName VARCHAR(50), Manufacturer VARCHAR(50), Mass FLOAT); INSERT INTO Spacecraft (SpacecraftID, SpacecraftName, Manufacturer, Mass) VALUES (1, 'SpaceX Dragon', 'SpaceX', 10000), (2, 'Orion', 'Lockheed Martin', 20000), (3, 'Starliner', 'Boeing', 15000);",
+        "sql": "SELECT SUM(Mass) FROM Spacecraft WHERE Manufacturer = 'SpaceX';"
+      },
+      {
+        "sql_prompt": "Delete all records of workplaces in the state of Georgia.",
+        "sql_context": "CREATE TABLE workplaces (id INT, name TEXT, state TEXT); INSERT INTO workplaces (id, name, state) VALUES (1, 'GHI Company', 'Georgia');",
+        "sql": "DELETE FROM workplaces WHERE state = 'Georgia';"
+      },
+      {
+        "sql_prompt": "How many tunnels are there in New York with a length greater than 5 miles?",
+        "sql_context": "CREATE TABLE Tunnels (id INT, name TEXT, location TEXT, state TEXT, length FLOAT); INSERT INTO Tunnels (id, name, location, state, length) VALUES (1, 'Tunnel A', 'Location A', 'New York', 7.5), (2, 'Tunnel B', 'Location B', 'New Jersey', 4.5);",
+        "sql": "SELECT COUNT(*) FROM Tunnels WHERE state = 'New York' AND length > 5;"
+      },
+      {
+        "sql_prompt": "Insert a new defense project timeline with Thailand, 'Type 16 MCV', '2022-04-01', '2024-04-01'.",
+        "sql_context": "CREATE TABLE DefenseProjectTimelines (id INT PRIMARY KEY, project_name VARCHAR(50), negotiation_start_date DATE, negotiation_end_date DATE, country VARCHAR(50));",
+        "sql": "INSERT INTO DefenseProjectTimelines (project_name, negotiation_start_date, negotiation_end_date, country) VALUES ('Type 16 MCV', '2022-04-01', '2024-04-01', 'Thailand');"
+      },
+      {
+        "sql_prompt": "Delete the view for displaying redundant billing data",
+        "sql_context": "CREATE VIEW redundant_billing_view AS SELECT bill_id, attorney_id, amount FROM billing_information WHERE amount < 0;",
+        "sql": "DROP VIEW redundant_billing_view;"
+      },
+      {
+        "sql_prompt": "What was the average retail sales revenue per 'Shirt' item in the USA?",
+        "sql_context": "CREATE TABLE RetailSales (id INT, garment_type VARCHAR(10), country VARCHAR(20), revenue DECIMAL(10, 2)); INSERT INTO RetailSales (id, garment_type, country, revenue) VALUES (1, 'Shirt', 'USA', 50.99), (2, 'Dress', 'USA', 75.50), (3, 'Shirt', 'Canada', 45.25);",
+        "sql": "SELECT AVG(revenue) as avg_revenue_per_item FROM RetailSales WHERE garment_type = 'Shirt' AND country = 'USA';"
+      }
+    ],
+    "signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "extended_signature_prefix": "Sql:"
+  }
+}

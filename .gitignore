@@ -134,4 +134,4 @@ dmypy.json
 .pyre/
 
 # Phoenix database
-phoenix/phoenix_data/
+phoenix/phoenix_data/phoenix.db
