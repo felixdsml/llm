@@ -1,0 +1,99 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "sql_prompt": "What are the names and production dates of garments made from fabrics with a sustainability score over 70, produced after 2021-01-01?",
+        "sql_context": "CREATE TABLE fabrics (id INT, name VARCHAR(50), type VARCHAR(50), sustainability_score INT); INSERT INTO fabrics (id, name, type, sustainability_score) VALUES (1, 'Organic Linen', 'Natural', 80); INSERT INTO fabrics (id, name, type, sustainability_score) VALUES (2, 'Recycled Nylon', 'Synthetic', 72);",
+        "rationale": "Here is the signature for the Text-to-SQL generation task:\n\n**SQL Prompt:** What are the names and production dates of garments made from fabrics with a sustainability score over 70, produced after 2021-01-01?\n\n**SQL Context:** \n```\nCREATE TABLE fabrics (id INT, name VARCHAR(50), type VARCHAR(50), sustainability_score INT);\nINSERT INTO fabrics (id, name, type, sustainability_score) VALUES (1, 'Organic Linen', 'Natural', 80);\nINSERT INTO fabrics (id, name, type, sustainability_score) VALUES (2, 'Recycled Nylon', 'Synthetic', 72);\n\nCREATE TABLE garments (id INT, fabric_id INT, production_date DATE, name VARCHAR",
+        "sql": "Here is the completed signature:\n\n**SQL Prompt:** What are the names and production dates of garments made from fabrics with a sustainability score over 70, produced after 2021-01-01?\n\n**SQL Context:**\n```\nCREATE TABLE fabrics (id INT, name VARCHAR(50), type VARCHAR(50), sustainability_ score INT);\nINSERT INTO fabrics (id, name, type, sustainability_score) VALUES (1, 'Organic Linen', 'Natural', 80);\nINSERT INTO fabrics (id, name, type, sustainability_score) VALUES (2, 'Recycled Nylon', 'Synthetic', 72);\nCREATE TABLE garments (id INT, fabric_id INT, production_date DATE, name VARCHAR(50));\n```\n\n**"
+      },
+      {
+        "augmented": true,
+        "sql_prompt": "Which size-inclusive garments have the highest revenue?",
+        "sql_context": "CREATE TABLE garments (id INT, size TEXT, revenue DECIMAL); INSERT INTO garments (id, size, revenue) VALUES (1, 'XS', 200), (2, 'S', 300), (3, 'M', 500), (4, 'L', 700), (5, 'XL', 800), (6, 'XXL', 900); CREATE TABLE sizes (id INT, size TEXT, description TEXT); INSERT INTO sizes (id, size, description) VALUES (1, 'XS', 'Extra Small'), (2, 'S', 'Small'), (3, 'M', 'Medium'), (4, 'L', 'Large'), (5, 'XL', 'Extra Large'), (6, 'XXL', 'Extra Extra Large');",
+        "rationale": "Here is the signature for the Text-to-SQL generation task:\n\n**Signature**\n\n`SELECT {column_names} FROM {table_name} WHERE {conditions} {optional_clauses};`\n\nWhere:\n\n* `{column_names}`: The names of the columns to be selected.\n* `{table_name}`: The name of the table from which to select data.\n* `{conditions}`: The conditions that must be met for a row to be included in the result set.\n* `{optional_clauses}`: Optional clauses such as `ORDER BY`, `GROUP BY`, `HAVING`, etc.\n\nLet me know if you have any questions or need further clarification!",
+        "sql": "Here is the completed signature:\n\nSql Prompt: Which size-inclusive garments have the highest revenue?\nSql Context: CREATE TABLE garments (id INT, size TEXT, revenue DECIMAL); INSERT INTO garments (id, size, revenue) VALUES (1, 'XS', 200), (2, 'S', 300), (3, 'M', 500), (4, 'L', 700), (5, 'XL', 800), (6, 'XXL', 900); CREATE TABLE sizes (id INT, size TEXT, description TEXT); INSERT INTO sizes (id, size, description) VALUES (1, 'XS', 'Extra Small'), (2, 'S', 'Small'), (3, 'M"
+      },
+      {
+        "augmented": true,
+        "sql_prompt": "List all materials used in the manufacturing sector in Brazil and South Africa.",
+        "sql_context": "CREATE TABLE material_data (material_name VARCHAR(50), country VARCHAR(50), industry VARCHAR(50)); INSERT INTO material_data (material_name, country, industry) VALUES ('Steel', 'Brazil', 'Manufacturing'), ('Aluminum', 'Brazil', 'Manufacturing'), ('Plastic', 'Brazil', 'Manufacturing'), ('Glass', 'Brazil', 'Manufacturing'), ('Titanium', 'South Africa', 'Manufacturing'), ('Steel', 'South Africa', 'Manufacturing'), ('Aluminum', 'South Africa', 'Manufacturing');",
+        "rationale": "Here is the signature for the Text-to-SQL generation task:\n\n**Signature**\n\n`SELECT material_name FROM material_data WHERE country IN ('Brazil', 'South Africa') AND industry = 'Manufacturing';`\n\nLet me know if you need any further assistance!",
+        "sql": "Here is the completed signature:\n\nSql Prompt: List all materials used in the manufacturing sector in Brazil and South Africa.\nSql Context: CREATE TABLE material_data (material_name VARCHAR(50), country VARCHAR(50), industry VARCHAR(50)); INSERT INTO material_data (material_name, country, industry) VALUES ('Steel', 'Brazil', 'Manufacturing'), ('Aluminum', 'Brazil', 'Manufacturing'), ('Plastic', 'Brazil', 'Manufacturing'), ('Glass', 'Brazil', 'Manufacturing'), ('Titanium', 'South Africa', 'Manufacturing'), ('Steel', 'South Africa', 'Manufacturing'), ('Aluminum', 'South Africa', 'Manufacturing');\nReasoning: Let's think step by step in order to"
+      },
+      {
+        "sql_prompt": "Which countries have the highest marine pollution levels in the Atlantic Ocean?",
+        "sql_context": "CREATE TABLE CountryPollution (id INT, country VARCHAR(255), pollution_level FLOAT); INSERT INTO CountryPollution (id, country, pollution_level) VALUES (1, 'United States', 6.2); INSERT INTO CountryPollution (id, country, pollution_level) VALUES (2, 'Brazil', 5.8);",
+        "sql": "SELECT country, pollution_level FROM CountryPollution WHERE location = 'Atlantic Ocean' AND pollution_level = (SELECT MAX(pollution_level) FROM CountryPollution WHERE location = 'Atlantic Ocean');"
+      },
+      {
+        "sql_prompt": "What is the total amount donated by each donor, ordered from highest to lowest?",
+        "sql_context": "CREATE TABLE Donors (DonorID INT, DonorName VARCHAR(50), TotalDonation DECIMAL(10,2)); INSERT INTO Donors VALUES (1, 'John Doe', 5000.00), (2, 'Jane Smith', 3500.00), (3, 'Mike Johnson', 2000.00);",
+        "sql": "SELECT DonorName, TotalDonation FROM Donors ORDER BY TotalDonation DESC;"
+      },
+      {
+        "sql_prompt": "What is the total number of construction permits issued in each state?",
+        "sql_context": "CREATE TABLE PermitsByState (State VARCHAR(50), PermitCount INT); INSERT INTO PermitsByState (State, PermitCount) VALUES ('Texas', 100);",
+        "sql": "SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;"
+      },
+      {
+        "sql_prompt": "What was the total attendance at poetry readings in San Francisco?",
+        "sql_context": "CREATE TABLE events (id INT, event_type VARCHAR(50), city VARCHAR(50), attendance INT); INSERT INTO events (id, event_type, city, attendance) VALUES (1, 'Poetry Reading', 'San Francisco', 50), (2, 'Music Concert', 'Los Angeles'), (3, 'Poetry Reading', 'San Francisco', 75);",
+        "sql": "SELECT SUM(attendance) FROM events WHERE event_type = 'Poetry Reading' AND city = 'San Francisco';"
+      },
+      {
+        "sql_prompt": "What is the maximum funding received by a biotech startup in the year 2020?",
+        "sql_context": "CREATE TABLE startups (id INT, name VARCHAR(100), industry VARCHAR(50), location VARCHAR(50), funding DECIMAL(10,2)); INSERT INTO startups (id, name, industry, location, funding) VALUES (1, 'StartupA', 'Biotech', 'US', 20000000.50), (2, 'StartupB', 'Biotech', 'UK', 30000000.00), (3, 'StartupC', 'Pharma', 'US', 15000000.00), (4, 'StartupD', 'Biotech', 'DE', 25000000.75);",
+        "sql": "SELECT MAX(funding) FROM startups WHERE industry = 'Biotech' AND YEAR(start_date) = 2020;"
+      },
+      {
+        "sql_prompt": "List the total number of cases for each Ethnicity in the DiversityInJustice table.",
+        "sql_context": "CREATE TABLE DiversityInJustice (JusticeID INT, Ethnicity VARCHAR(30)); CREATE TABLE JusticeCases (CaseID INT, JusticeID INT, Date DATE); INSERT INTO DiversityInJustice (JusticeID, Ethnicity) VALUES (1, 'African American'), (2, 'Hispanic'), (3, 'Asian'), (4, 'Caucasian'); INSERT INTO JusticeCases (CaseID, JusticeID, Date) VALUES (1, 1, '2021-09-01'), (2, 1, '2021-07-20'), (3, 2, '2021-08-12'), (4, 3, '2021-08-15'), (5, 3, '2021-09-01'), (6, 4, '2021-09-10');",
+        "sql": "SELECT Ethnicity, COUNT(*) as TotalCases FROM JusticeCases JOIN DiversityInJustice ON JusticeCases.JusticeID = DiversityInJustice.JusticeID GROUP BY Ethnicity;"
+      },
+      {
+        "sql_prompt": "How many marine species are affected by ocean acidification?",
+        "sql_context": "CREATE TABLE species_impact (id INTEGER, name VARCHAR(255), species VARCHAR(255), affected_by_acidification BOOLEAN);",
+        "sql": "SELECT COUNT(*) FROM species_impact WHERE affected_by_acidification = TRUE;"
+      },
+      {
+        "sql_prompt": "What is the total quantity of ingredients sourced from local farmers?",
+        "sql_context": "CREATE TABLE suppliers (supplier_id INT, supplier_name VARCHAR(50), location VARCHAR(50)); INSERT INTO suppliers VALUES (1, 'Green Acres', 'Local'), (2, 'Sunrise Farms', 'Out of State'), (3, 'Farm Fresh', 'Local'); CREATE TABLE inventory (ingredient_id INT, ingredient_name VARCHAR(50), supplier_id INT, quantity INT); INSERT INTO inventory VALUES (1, 'Tomatoes', 1, 100), (2, 'Chicken', 2, 50), (3, 'Lettuce', 3, 80);",
+        "sql": "SELECT SUM(inventory.quantity) FROM inventory INNER JOIN suppliers ON inventory.supplier_id = suppliers.supplier_id WHERE suppliers.location = 'Local';"
+      },
+      {
+        "sql_prompt": "What is the total number of digital assets issued by companies based in the United States?",
+        "sql_context": "CREATE TABLE digital_assets (id INT, name TEXT, company TEXT, country TEXT); INSERT INTO digital_assets (id, name, company, country) VALUES (1, 'ExampleAsset1', 'ExampleCompany1', 'United States');",
+        "sql": "SELECT COUNT(*) FROM digital_assets WHERE country = 'United States' AND company IS NOT NULL;"
+      },
+      {
+        "sql_prompt": "What is the average temperature per year in the Arctic Research Lab?",
+        "sql_context": "CREATE TABLE ArcticResearchLab (id INT, year INT, temperature FLOAT); INSERT INTO ArcticResearchLab (id, year, temperature) VALUES (1, 2000, -10.5), (2, 2001, -11.3), (3, 2002, -12.1);",
+        "sql": "SELECT AVG(temperature) FROM ArcticResearchLab GROUP BY year;"
+      },
+      {
+        "sql_prompt": "Which incident response policies were implemented in Asia, and what is the rank of each policy based on the number of incidents it covers?",
+        "sql_context": "CREATE TABLE incidents (id INT, date DATE, category VARCHAR(20), source_ip VARCHAR(15), target_ip VARCHAR(15)); CREATE TABLE policies (id INT, date DATE, type VARCHAR(20), region VARCHAR(30)); INSERT INTO incidents (id, date, category, source_ip, target_ip) VALUES (1, '2021-01-01', 'malware', '192.168.1.100', '8.8.8.8'); INSERT INTO policies (id, date, type, region) VALUES (1, '2021-01-01', 'incident response', 'Asia');",
+        "sql": "SELECT policies.type, RANK() OVER (ORDER BY incident_count DESC) as policy_rank FROM (SELECT policy.type, COUNT(*) as incident_count FROM incidents JOIN policies ON incidents.date = policies.date WHERE policies.region = 'Asia' GROUP BY policy.type) as subquery JOIN policies ON policies.type = subquery.type;"
+      },
+      {
+        "sql_prompt": "How many students in the \"Lifelong Learning\" program have submitted an assignment in the past week?",
+        "sql_context": "CREATE TABLE lifelong_learning_students (id INT, name VARCHAR(50), program VARCHAR(50), last_assignment DATE);",
+        "sql": "SELECT COUNT(*) FROM lifelong_learning_students WHERE last_assignment >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK);"
+      },
+      {
+        "sql_prompt": "What is the change in co-ownership cost per property between consecutive rows, ordered by the 'co_ownership' table's ID?",
+        "sql_context": "CREATE TABLE co_ownership (id INT, city VARCHAR(255), co_ownership_cost INT, property_id INT); INSERT INTO co_ownership (id, city, co_ownership_cost, property_id) VALUES (1, 'Seattle', 550000, 101), (2, 'Seattle', 560000, 102), (3, 'Portland', 420000, 103), (4, 'Portland', 430000, 104), (5, 'Portland', 440000, 105);",
+        "sql": "SELECT id, city, co_ownership_cost, LAG(co_ownership_cost) OVER (PARTITION BY city ORDER BY id) AS previous_co_ownership_cost, co_ownership_cost - LAG(co_ownership_cost) OVER (PARTITION BY city ORDER BY id) AS cost_change FROM co_ownership ORDER BY id;"
+      }
+    ],
+    "signature_instructions": "Signature for Text to SQL generation task.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Signature for Text to SQL generation task.",
+    "extended_signature_prefix": "Sql:"
+  }
+}

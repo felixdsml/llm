@@ -50,20 +50,20 @@ random.seed(random_seed)
 
 # Configuration for base and evaluator models
 model_info_base = [
-    # {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
-    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "command-r", "base_url": 'http://localhost:11435'},
-    # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "aya:35b", "base_url": 'http://localhost:11435'},
+    {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
+    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
+    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
+    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "command-r", "base_url": 'http://localhost:11435'},
+    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "aya:35b", "base_url": 'http://localhost:11435'},
     # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
-    {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
+    # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
+    # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
 ]
 
@@ -233,14 +233,14 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         """Optimize the program and evaluate on validation and test sets."""
         start_time = time.time()
         print(f"Optimizing with {program_label} and evaluating")
-        optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset)
+        optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
         optimization_time = round(time.time() - start_time, 2)
         save_optimized_program(optimized_program, model_name, evaluator_model_name, program_label, random_seed, number_of_samples)
         
-        val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time = evaluate_set(valset, optimized_program, f"{program_label} validation")
+        # val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time = evaluate_set(valset, optimized_program, f"{program_label} validation")
         test_match_scores, test_correct_scores, test_combined_scores, test_match_results, test_correct_results, test_time = evaluate_set(testset, optimized_program, f"{program_label} test")
         
-        return (val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time,
+        return (#val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time,
                 test_match_scores, test_correct_scores, test_combined_scores, test_match_results, test_correct_results, test_time, optimization_time)
 
     results = {
@@ -266,8 +266,8 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     # Optimize with BootstrapFewShotWithRandomSearch and evaluate
     max_bootstrapped_demos = 4
     num_candidate_programs = 8
-    bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS)
-    (val_bootstrap_match_scores, val_bootstrap_correct_scores, val_bootstrap_combined_scores, val_bootstrap_match_results, val_bootstrap_correct_results, val_bootstrap_time,
+    bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
+    (#val_bootstrap_match_scores, val_bootstrap_correct_scores, val_bootstrap_combined_scores, val_bootstrap_match_results, val_bootstrap_correct_results, val_bootstrap_time,
      test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_time, 
      bootstrap_optimization_time) = optimize_and_evaluate(bootstrap_optimizer, trainset, valset, testset, "BootstrapFewShot")
     
@@ -306,16 +306,16 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         # "Test Correctness Results - LabeledFewShot": save_large_result(test_fewshot_correct_results, model_name, evaluator_model_name, "test_fewshot_correct", random_seed, number_of_samples),
         # "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
         "Optimization Time - BootstrapFewShot": bootstrap_optimization_time,
-        "Validation Match Time - BootstrapFewShot": val_bootstrap_time,
-        "Validation Match Scores - BootstrapFewShot": val_bootstrap_match_scores,
-        "Validation Match Results - BootstrapFewShot": save_large_result(val_bootstrap_match_results, model_name, evaluator_model_name, "val_bootstrap_match", random_seed, number_of_samples),
-        "Validation Correctness Time - BootstrapFewShot": val_bootstrap_time,
-        "Validation Correctness Scores - BootstrapFewShot": val_bootstrap_correct_scores,
-        "Validation Correctness Results - BootstrapFewShot": save_large_result(val_bootstrap_correct_results, model_name, evaluator_model_name, "val_bootstrap_correct", random_seed, number_of_samples),
-        "Validation Combined Scores - BootstrapFewShot": val_bootstrap_combined_scores,
+        # "Validation Match Time - BootstrapFewShot": val_bootstrap_time,
+        # "Validation Match Scores - BootstrapFewShot": val_bootstrap_match_scores,
+        # "Validation Match Results - BootstrapFewShot": save_large_result(val_bootstrap_match_results, model_name, evaluator_model_name, "val_bootstrap_match", random_seed, number_of_samples),
+        # "Validation Correctness Time - BootstrapFewShot": val_bootstrap_time,
+        # "Validation Correctness Scores - BootstrapFewShot": val_bootstrap_correct_scores,
+        # "Validation Correctness Results - BootstrapFewShot": save_large_result(val_bootstrap_correct_results, model_name, evaluator_model_name, "val_bootstrap_correct", random_seed, number_of_samples),
+        # "Validation Combined Scores - BootstrapFewShot": val_bootstrap_combined_scores,
         "Test Match Time - BootstrapFewShot": test_bootstrap_time,
         "Test Match Scores - BootstrapFewShot": test_bootstrap_match_scores,
-        "Test Match Results - BootstrapFewShot": save_large_result(test_bootstrap_match_results, model_name, evaluator_model_name, "test_bootstrap_match", random_seed, number_of_samples),
+        "Test Match Results - BootstrapFewShot": save_large_result(test_bootstrap_match_results, model_name, evaluator_model_name, "test_bootstrap_match", random_seed, number_of_samples), 
         "Test Correctness Time - BootstrapFewShot": test_bootstrap_time,
         "Test Correctness Scores - BootstrapFewShot": test_bootstrap_correct_scores,
         "Test Correctness Results - BootstrapFewShot": save_large_result(test_bootstrap_correct_results, model_name, evaluator_model_name, "test_bootstrap_correct", random_seed, number_of_samples),
