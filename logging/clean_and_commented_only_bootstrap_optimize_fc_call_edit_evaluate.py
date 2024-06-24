@@ -154,7 +154,7 @@ class SQLMatch(dspy.Signature):
     match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="Yes/No:")
 
 match_instruction = """
-Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query. Output only 'Yes' if it matches, otherwise output only 'No'.
+Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Output only 'Yes' if it matches, otherwise output only 'No'.
 """
 SQLMatch = SQLMatch.with_instructions(match_instruction)
 
@@ -163,17 +163,18 @@ class SQLCorrectness(dspy.Signature):
     sql_prompt = dspy.InputField(desc="Natural language query")
     sql_context = dspy.InputField(desc="Context for the query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-    correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context", prefix="Yes/No:")
+    correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="Yes/No:")
 
 correctness_instruction = """
-Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. Output only 'Yes' if it is correct, otherwise output only 'No'.
+Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context.
 """
 SQLCorrectness = SQLCorrectness.with_instructions(correctness_instruction)
 
 class SQLExecutable(dspy.Signature):
     """Signature for evaluating if the SQL query is executable."""
+    sql_reference = dspy.InputField(desc="Reference SQL query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-    executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable", prefix="Yes/No:")
+    executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="Yes/No:")
 
 executable_instruction = """
 Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. 
@@ -182,16 +183,14 @@ Criteria:
 1. The SQL query must not include any additional text such as rationale, prompts, or context.
 2. It must be executable without modifications.
 
-Example for bad predicted SQL query:
+Example which does not meet the criteria:
 
-{
-  "sql_reference": "SELECT subscriber_id, speed, month FROM (SELECT subscriber_id, speed, month, LAG(speed, 1) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_speed, LAG(speed, 2) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_prev_speed FROM mobile_usage_detailed) t WHERE t.speed < 0.75 * t.prev_speed AND t.speed < 0.75 * t.prev_prev_speed ORDER BY subscriber_id;",
-  "sql_predicted": "Here is the completed signature for the Text-to-SQL generation task:\n\nSql Prompt: Find the mobile subscribers with consecutive speed drops greater than 25% for the last 3 months, ordered by subscription IDs.\n\nSql Context: CREATE TABLE mobile_usage_detailed (subscriber_id INT, month INT, speed FLOAT); INSERT INTO mobile_usage_detailed (subscriber_id, month, speed) VALUES (1, 1, 100), (1, 2, 80), (1, 3, 70), (2, 1, 200), (2, 2"
-}
+Reference SQL query: "SELECT subscriber_id, speed, month FROM (SELECT subscriber_id, speed, month, LAG(speed, 1) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_speed, LAG(speed, 2) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_prev_speed FROM mobile_usage_detailed) t WHERE t.speed < 0.75 * t.prev_speed AND t.speed < 0.75 * t.prev_prev_speed ORDER BY subscriber_id;"
 
-If the SQL query meets all the criteria, output 'Yes'. If it fails any of the criteria, output 'No'.
+Predicted SQL query: "Here is the completed signature for the Text-to-SQL generation task:
+Sql Prompt: Find the mobile subscribers with consecutive speed drops greater than 25% for the last 3 months, ordered by subscription IDs. 
+SELECT subscriber_id, speed, month FROM (SELECT subscriber_id, speed, month, LAG(speed, 1) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_speed, LAG(speed, 2) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_prev_speed FROM mobile_usage_detailed) t WHERE t.speed < 0.75 * t.prev_speed AND t.speed < 0.75 * t.prev_prev_speed ORDER BY subscriber_id;
 """
-SQLExecutable = SQLExecutable.with_instructions(executable_instruction)
 SQLExecutable = SQLExecutable.with_instructions(executable_instruction)
 
 class TextToSqlProgram(dspy.Module):
@@ -237,7 +236,7 @@ def executable_metric(example, pred, trace=None):
     executable_score = int(re.search(r'\bYes\b', executable_output, re.IGNORECASE) is not None)
     
     return executable_score
-
+F
 
 # Combined metric function
 def combined_metric(example, pred, trace=None):
