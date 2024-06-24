@@ -151,7 +151,7 @@ class SQLMatch(dspy.Signature):
     """Signature for matching SQL queries."""
     sql_reference = dspy.InputField(desc="Reference SQL query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-    match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="Yes/No:")
+    match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="True:")
 
 match_instruction = """
 Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Output only 'Yes' if it matches, otherwise output only 'No'.
@@ -163,7 +163,7 @@ class SQLCorrectness(dspy.Signature):
     sql_prompt = dspy.InputField(desc="Natural language query")
     sql_context = dspy.InputField(desc="Context for the query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-    correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="Yes/No:")
+    correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
 correctness_instruction = """
 Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context.
@@ -174,10 +174,10 @@ class SQLExecutable(dspy.Signature):
     """Signature for evaluating if the SQL query is executable."""
     sql_reference = dspy.InputField(desc="Reference SQL query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
-    executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="Yes/No:")
+    executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
 executable_instruction = """
-Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. 
+Answer only with Yes or No. Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. 
 
 Criteria:
 1. The SQL query must not include any additional text such as rationale, prompts, or context.
@@ -185,11 +185,14 @@ Criteria:
 
 Example which does not meet the criteria:
 
-Reference SQL query: "SELECT subscriber_id, speed, month FROM (SELECT subscriber_id, speed, month, LAG(speed, 1) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_speed, LAG(speed, 2) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_prev_speed FROM mobile_usage_detailed) t WHERE t.speed < 0.75 * t.prev_speed AND t.speed < 0.75 * t.prev_prev_speed ORDER BY subscriber_id;"
+        
+Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
+Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: ```sql WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week ) SELECT * FROM peak_times
+True: No
 
-Predicted SQL query: "Here is the completed signature for the Text-to-SQL generation task:
-Sql Prompt: Find the mobile subscribers with consecutive speed drops greater than 25% for the last 3 months, ordered by subscription IDs. 
-SELECT subscriber_id, speed, month FROM (SELECT subscriber_id, speed, month, LAG(speed, 1) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_speed, LAG(speed, 2) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_prev_speed FROM mobile_usage_detailed) t WHERE t.speed < 0.75 * t.prev_speed AND t.speed < 0.75 * t.prev_prev_speed ORDER BY subscriber_id;
+Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
+Sql Predicted: WITH daily_usage AS (SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps), peak_times AS (SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week) SELECT * FROM peak_times
+True: Yes
 """
 SQLExecutable = SQLExecutable.with_instructions(executable_instruction)
 
@@ -204,7 +207,7 @@ class TextToSqlProgram(dspy.Module):
         return self.program(sql_prompt=sql_prompt, sql_context=sql_context)#, span_id=current_span.get_span_context().span_id)
     
 
-def match_metric(example, pred, trace=None, span_id=None):
+def match_metric(example, pred, trace=None):
     """Evaluate if the predicted SQL query matches the reference SQL query."""
     sql_reference, sql_predicted = example.sql, pred.sql
     match = dspy.Predict(SQLMatch)
@@ -212,6 +215,7 @@ def match_metric(example, pred, trace=None, span_id=None):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
     match_output = is_match.match.strip()
     match_score = int(re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None)
+    
     return match_score
 
 def correctness_metric(example, pred, trace=None):
@@ -228,15 +232,15 @@ def correctness_metric(example, pred, trace=None):
 
 def executable_metric(example, pred, trace=None):
     """Evaluate if the predicted SQL query is executable."""
+    sql_reference = example.sql
     sql_predicted = pred.sql
     executable = dspy.Predict(SQLExecutable)
     with dspy.context(lm=evaluator_lm):
-        is_executable = executable(sql_predicted=sql_predicted)
+        is_executable = executable(sql_reference=sql_reference, sql_predicted=sql_predicted)
     executable_output = is_executable.executable.strip()
     executable_score = int(re.search(r'\bYes\b', executable_output, re.IGNORECASE) is not None)
     
     return executable_score
-F
 
 # Combined metric function
 def combined_metric(example, pred, trace=None):
@@ -251,7 +255,7 @@ def combined_metric(example, pred, trace=None):
     with dspy.context(lm=evaluator_lm):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
         is_correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql_predicted=sql_predicted)
-        is_executable = executable(sql_predicted=sql_predicted)
+        is_executable = executable(sql_reference=sql_reference, sql_predicted=sql_predicted)
         
     match_output = is_match.match.strip()
     correct_output = is_correct.correct.strip()
@@ -408,6 +412,8 @@ for base_model in model_info_base:
         
         model_name = base_model["model"].replace(":", "_").replace("-", "_").replace(".", "_")
         evaluator_model_name = eval_model["evaluator_model"].replace(":", "_").replace("-", "_").replace(".", "_")
+        
+        print("Starting evaluation for model: ", base_model["model"], " and evaluator: ", eval_model["evaluator_model"])
         
         dspy.configure(lm=base_lm)
         with using_project(f'{model_name}_{evaluator_model_name}_{random_seed}_{number_of_samples}'):
