@@ -42,7 +42,7 @@ DSPyInstrumentor().instrument()
 NUM_THREADS = 16
 
 # Set debug flag
-IF_DEBUG = True
+IF_DEBUG = False
 
 # Number of samples to generate for evaluation
 number_of_samples = 200
@@ -54,19 +54,19 @@ random.seed(random_seed)
 # Configuration for base and evaluator models
 model_info_base = [
     {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
-    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "command-r", "base_url": 'http://localhost:11435'},
-    # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "aya:35b", "base_url": 'http://localhost:11435'},
-    # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
-    # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
+    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
+    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
+    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
+    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "command-r", "base_url": 'http://localhost:11435'},
+    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "aya:35b", "base_url": 'http://localhost:11435'},
+    {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
+    {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
+    {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
 ]
 
@@ -176,8 +176,22 @@ class SQLExecutable(dspy.Signature):
     executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable", prefix="Yes/No:")
 
 executable_instruction = """
-Given a predicted SQL query, determine if the SQL query is executable. Output only 'Yes' if it is executable, otherwise output only 'No'.
+Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. 
+
+Criteria:
+1. The SQL query must not include any additional text such as rationale, prompts, or context.
+2. It must be executable without modifications.
+
+Example for bad predicted SQL query:
+
+{
+  "sql_reference": "SELECT subscriber_id, speed, month FROM (SELECT subscriber_id, speed, month, LAG(speed, 1) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_speed, LAG(speed, 2) OVER (PARTITION BY subscriber_id ORDER BY month) as prev_prev_speed FROM mobile_usage_detailed) t WHERE t.speed < 0.75 * t.prev_speed AND t.speed < 0.75 * t.prev_prev_speed ORDER BY subscriber_id;",
+  "sql_predicted": "Here is the completed signature for the Text-to-SQL generation task:\n\nSql Prompt: Find the mobile subscribers with consecutive speed drops greater than 25% for the last 3 months, ordered by subscription IDs.\n\nSql Context: CREATE TABLE mobile_usage_detailed (subscriber_id INT, month INT, speed FLOAT); INSERT INTO mobile_usage_detailed (subscriber_id, month, speed) VALUES (1, 1, 100), (1, 2, 80), (1, 3, 70), (2, 1, 200), (2, 2"
+}
+
+If the SQL query meets all the criteria, output 'Yes'. If it fails any of the criteria, output 'No'.
 """
+SQLExecutable = SQLExecutable.with_instructions(executable_instruction)
 SQLExecutable = SQLExecutable.with_instructions(executable_instruction)
 
 class TextToSqlProgram(dspy.Module):
@@ -187,13 +201,8 @@ class TextToSqlProgram(dspy.Module):
         self.program = dspy.ChainOfThought(signature=TextToSql)
 
     def forward(self, sql_prompt, sql_context):
-        current_span = trace_api.get_current_span()
-        # prediction = self.program(sql_prompt=sql_prompt, sql_context=sql_context)
-        # return self.program(sql_prompt=sql_prompt, sql_context=sql_context)
-        # return self.program(sql_prompt=sql_prompt, sql_context=sql_context, span_id=current_span.get_span_context().span_id)
-        # print(f"Span ID during prediction: {current_span.get_span_context().span_id}")
-        # return dspy.Prediction(answer=prediction.sql, span_id=current_span.get_span_context().span_id)
-        return self.program(sql_prompt=sql_prompt, sql_context=sql_context, span_id=current_span.get_span_context().span_id)
+        # current_span = trace_api.get_current_span()
+        return self.program(sql_prompt=sql_prompt, sql_context=sql_context)#, span_id=current_span.get_span_context().span_id)
     
 
 def match_metric(example, pred, trace=None, span_id=None):
@@ -204,16 +213,6 @@ def match_metric(example, pred, trace=None, span_id=None):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
     match_output = is_match.match.strip()
     match_score = int(re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None)
-    
-    current_span = trace_api.get_current_span()
-    print(f"Span ID during match_metric: {current_span.get_span_context().span_id}")
-    
-    # # Retrieve the span_id from the prediction
-    # span_id = getattr(pred, 'span_id', None)
-    # # convert span_id to hex
-    # span_id = f"{span_id:x}"
-    # print(f"Span ID during evaluation: {span_id}")
-    
     return match_score
 
 def correctness_metric(example, pred, trace=None):
@@ -224,12 +223,6 @@ def correctness_metric(example, pred, trace=None):
         is_correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql_predicted=sql_predicted)
     correct_output = is_correct.correct.strip()
     correct_score = int(re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None)
-    
-    # # Retrieve the span_id from the prediction
-    # span_id = getattr(pred, 'span_id', None)
-    # # convert span_id to hex
-    # span_id = f"{span_id:x}"
-    # print(f"Span ID during evaluation: {span_id}")
     
     return correct_score
 
@@ -274,118 +267,6 @@ def combined_metric(example, pred, trace=None):
 
 
 
-# def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
-#     """Evaluate the model using different optimization techniques and return the results."""
-    
-#     def evaluate_set(devset, program, label):
-#         """Evaluate a given set with the specified program."""
-#         print(f"Evaluating on {label} set")
-#         start_time = time.time()
-#         match_evaluate = Evaluate(devset=devset, metric=match_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#         correct_evaluate = Evaluate(devset=devset, metric=correctness_metric, num_threads=NUM_THREADS, display_progress=True, display_table=0, return_all_scores=True, return_outputs=True)
-#         match_score, match_result = match_evaluate(program)
-#         correct_score, correct_result = correct_evaluate(program)
-#         combined_score = ((int(match_score) << 1) | int(correct_score))/3
-#         eval_time = round(time.time() - start_time, 2)
-#         return match_score, correct_score, combined_score, match_result, correct_result, eval_time
-
-#     def optimize_and_evaluate(optimizer, trainset, valset, testset, program_label):
-#         """Optimize the program and evaluate on validation and test sets."""
-#         start_time = time.time()
-#         print(f"Optimizing with {program_label} and evaluating")
-#         optimized_program = optimizer.compile(student=TextToSqlProgram(), trainset=trainset, valset=valset)
-#         optimization_time = round(time.time() - start_time, 2)
-#         save_optimized_program(optimized_program, model_name, evaluator_model_name, program_label, random_seed, number_of_samples)
-        
-#         # val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time = evaluate_set(valset, optimized_program, f"{program_label} validation")
-#         test_match_scores, test_correct_scores, test_combined_scores, test_match_results, test_correct_results, test_time = evaluate_set(testset, optimized_program, f"{program_label} test")
-        
-#         return (#val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time,
-#                 test_match_scores, test_correct_scores, test_combined_scores, test_match_results, test_correct_results, test_time, optimization_time)
-
-#     results = {
-#         "Model": model_name,
-#         "Evaluator Model": evaluator_model_name,
-#         "Random Seed": random_seed,
-#         "Number of Samples": number_of_samples,
-#     }
-    
-#     generate_sql_query = dspy.Predict(signature=TextToSql)
-#     total_start_time = time.time()
-    
-#     # # Evaluate on validation and test sets
-#     # val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time = evaluate_set(valset, generate_sql_query, "validation")
-#     # test_match_scores, test_correct_scores, test_combined_scores, test_match_results, test_correct_results, test_time = evaluate_set(testset, generate_sql_query, "test")
-    
-#     # # Optimize with LabeledFewShot and evaluate
-#     # labeled_fewshot_optimizer = LabeledFewShot(k=4)
-#     # (val_fewshot_match_scores, val_fewshot_correct_scores, val_fewshot_combined_scores, val_fewshot_match_results, val_fewshot_correct_results, val_fewshot_time,
-#     #  test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_time, 
-#     #  fewshot_optimization_time) = optimize_and_evaluate(labeled_fewshot_optimizer, trainset, valset, testset, "LabeledFewShot")
-    
-#     # Optimize with BootstrapFewShotWithRandomSearch and evaluate
-#     max_bootstrapped_demos = 2
-#     num_candidate_programs = 2
-#     bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
-#     (#val_bootstrap_match_scores, val_bootstrap_correct_scores, val_bootstrap_combined_scores, val_bootstrap_match_results, val_bootstrap_correct_results, val_bootstrap_time,
-#      test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_time, 
-#      bootstrap_optimization_time) = optimize_and_evaluate(bootstrap_optimizer, trainset, valset, testset, "BootstrapFewShot")
-    
-#     total_time = round(time.time() - total_start_time, 2)
-#     print("Evaluation complete")
-
-#     results.update({
-#         "Total Time": total_time,
-#         # "Validation Match Time": val_time,
-#         # "Validation Match Scores": val_match_scores,
-#         # "Validation Match Results": save_large_result(val_match_results, model_name, evaluator_model_name, "val_match", random_seed, number_of_samples),
-#         # "Validation Correctness Time": val_time,
-#         # "Validation Correctness Scores": val_correct_scores,
-#         # "Validation Correctness Results": save_large_result(val_correct_results, model_name, evaluator_model_name, "val_correct", random_seed, number_of_samples),
-#         # "Validation Combined Scores": val_combined_scores,
-#         # "Test Match Time": test_time,
-#         # "Test Match Scores": test_match_scores,
-#         # "Test Match Results": save_large_result(test_match_results, model_name, evaluator_model_name, "test_match", random_seed, number_of_samples),
-#         # "Test Correctness Time": test_time,
-#         # "Test Correctness Scores": test_correct_scores,
-#         # "Test Correctness Results": save_large_result(test_correct_results, model_name, evaluator_model_name, "test_correct", random_seed, number_of_samples),
-#         # "Test Combined Scores": test_combined_scores,
-#         # "Optimization Time - LabeledFewShot": fewshot_optimization_time,
-#         # "Validation Match Time - LabeledFewShot": val_fewshot_time,
-#         # "Validation Match Scores - LabeledFewShot": val_fewshot_match_scores,
-#         # "Validation Match Results - LabeledFewShot": save_large_result(val_fewshot_match_results, model_name, evaluator_model_name, "val_fewshot_match", random_seed, number_of_samples),
-#         # "Validation Correctness Time - LabeledFewShot": val_fewshot_time,
-#         # "Validation Correctness Scores - LabeledFewShot": val_fewshot_correct_scores,
-#         # "Validation Correctness Results - LabeledFewShot": save_large_result(val_fewshot_correct_results, model_name, evaluator_model_name, "val_fewshot_correct", random_seed, number_of_samples),
-#         # "Validation Combined Scores - LabeledFewShot": val_fewshot_combined_scores,
-#         # "Test Match Time - LabeledFewShot": test_fewshot_time,
-#         # "Test Match Scores - LabeledFewShot": test_fewshot_match_scores,
-#         # "Test Match Results - LabeledFewShot": save_large_result(test_fewshot_match_results, model_name, evaluator_model_name, "test_fewshot_match", random_seed, number_of_samples),
-#         # "Test Correctness Time - LabeledFewShot": test_fewshot_time,
-#         # "Test Correctness Scores - LabeledFewShot": test_fewshot_correct_scores,
-#         # "Test Correctness Results - LabeledFewShot": save_large_result(test_fewshot_correct_results, model_name, evaluator_model_name, "test_fewshot_correct", random_seed, number_of_samples),
-#         # "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
-#         "Optimization Time - BootstrapFewShot": bootstrap_optimization_time,
-#         # "Validation Match Time - BootstrapFewShot": val_bootstrap_time,
-#         # "Validation Match Scores - BootstrapFewShot": val_bootstrap_match_scores,
-#         # "Validation Match Results - BootstrapFewShot": save_large_result(val_bootstrap_match_results, model_name, evaluator_model_name, "val_bootstrap_match", random_seed, number_of_samples),
-#         # "Validation Correctness Time - BootstrapFewShot": val_bootstrap_time,
-#         # "Validation Correctness Scores - BootstrapFewShot": val_bootstrap_correct_scores,
-#         # "Validation Correctness Results - BootstrapFewShot": save_large_result(val_bootstrap_correct_results, model_name, evaluator_model_name, "val_bootstrap_correct", random_seed, number_of_samples),
-#         # "Validation Combined Scores - BootstrapFewShot": val_bootstrap_combined_scores,
-#         "Test Match Time - BootstrapFewShot": test_bootstrap_time,
-#         "Test Match Scores - BootstrapFewShot": test_bootstrap_match_scores,
-#         "Test Match Results - BootstrapFewShot": save_large_result(test_bootstrap_match_results, model_name, evaluator_model_name, "test_bootstrap_match", random_seed, number_of_samples), 
-#         "Test Correctness Time - BootstrapFewShot": test_bootstrap_time,
-#         "Test Correctness Scores - BootstrapFewShot": test_bootstrap_correct_scores,
-#         "Test Correctness Results - BootstrapFewShot": save_large_result(test_bootstrap_correct_results, model_name, evaluator_model_name, "test_bootstrap_correct", random_seed, number_of_samples),
-#         "Test Combined Scores - BootstrapFewShot": test_bootstrap_combined_scores,
-#         "Max Bootstrapped Demos": max_bootstrapped_demos,
-#         "Number of Candidate Programs": num_candidate_programs,
-#     })
-
-#     return results
-
 def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
     """Evaluate the model using different optimization techniques and return the results."""
     
@@ -393,43 +274,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         """Evaluate a given set with the specified program."""
         print(f"Evaluating on {label} set")
         start_time = time.time()
-        
-    #     # Evaluate match metric
-    #     match_evaluate = Evaluate(
-    #         devset=devset, 
-    #         metric=match_metric, 
-    #         num_threads=NUM_THREADS, 
-    #         display_progress=True, 
-    #         display_table=0, 
-    #         return_all_scores=True, 
-    #         return_outputs=True
-    #     )
-    #     match_score, match_result = match_evaluate(program)
-        
-    #     # Evaluate correctness metric
-    #     correct_evaluate = Evaluate(
-    #         devset=devset, 
-    #         metric=correctness_metric, 
-    #         num_threads=NUM_THREADS, 
-    #         display_progress=True, 
-    #         display_table=0, 
-    #         return_all_scores=True, 
-    #         return_outputs=True
-    #     )
-    #     correct_score, correct_result = correct_evaluate(program)
-        
-    #     # Evaluate executable metric
-    #     executable_evaluate = Evaluate(
-    #         devset=devset, 
-    #         metric=executable_metric, 
-    #         num_threads=NUM_THREADS, 
-    #         display_progress=True, 
-    #         display_table=0, 
-    #         return_all_scores=True, 
-    #         return_outputs=True
-    #     )
-    #     executable_score, executable_result = executable_evaluate(program)
-    
+     
         # Define the metrics
         metrics = [match_metric, correctness_metric, executable_metric]
 
@@ -474,11 +319,9 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         optimization_time = round(time.time() - start_time, 2)
         save_optimized_program(optimized_program, model_name, evaluator_model_name, program_label, random_seed, number_of_samples)
         
-        # val_match_scores, val_correct_scores, val_combined_scores, val_match_results, val_correct_results, val_time = evaluate_set(valset, optimized_program, f"{program_label} validation")
         test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time = evaluate_set(testset, optimized_program, f"{program_label} test")
         
-        return (#val_match_scores, val_correct_scores, val_executable_scores, val_combined_scores, val_match_results, val_correct_results, val_executable_results, val_time,
-                test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time, optimization_time)
+        return (test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time, optimization_time)
 
     results = {
         "Model": model_name,
@@ -491,22 +334,19 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     total_start_time = time.time()
     
     # # Evaluate on validation and test sets
-    # val_match_scores, val_correct_scores, val_executable_scores, val_combined_scores, val_match_results, val_correct_results, val_executable_results, val_time = evaluate_set(valset, generate_sql_query, "validation")
-    # test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time = evaluate_set(testset, generate_sql_query, "test")
+  
+    test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time = evaluate_set(testset, generate_sql_query, "test")
     
     # # Optimize with LabeledFewShot and evaluate
     labeled_fewshot_optimizer = LabeledFewShot(k=4)
-    (#val_fewshot_match_scores, val_fewshot_correct_scores, val_fewshot_executable_scores, val_fewshot_combined_scores, val_fewshot_match_results, val_fewshot_correct_results, val_fewshot_executable_results, val_fewshot_time,
-     test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_executable_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_executable_results, test_fewshot_time, 
+    (test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_executable_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_executable_results, test_fewshot_time, 
      fewshot_optimization_time) = optimize_and_evaluate(labeled_fewshot_optimizer, trainset, valset, testset, "LabeledFewShot")
     
     # # Optimize with BootstrapFewShotWithRandomSearch and evaluate
     max_bootstrapped_demos = 2
     num_candidate_programs = 2
-    # bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
     bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
-    (#val_bootstrap_match_scores, val_bootstrap_correct_scores, val_bootstrap_executable_scores, val_bootstrap_combined_scores, val_bootstrap_match_results, val_bootstrap_correct_results, val_bootstrap_executable_results, val_bootstrap_time,
-     test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_executable_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_executable_results, test_bootstrap_time, 
+    (     test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_executable_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_executable_results, test_bootstrap_time, 
      bootstrap_optimization_time) = optimize_and_evaluate(bootstrap_optimizer, trainset, valset, testset, "BootstrapFewShot")
     
     total_time = round(time.time() - total_start_time, 2)
@@ -514,37 +354,17 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
 
     results.update({
         "Total Time": total_time,
-        # "Validation Match Time": val_time,
-        # "Validation Match Scores": val_match_scores,
-        # "Validation Match Results": save_large_result(val_match_results, model_name, evaluator_model_name, "val_match", random_seed, number_of_samples),
-        # "Validation Correctness Time": val_time,
-        # "Validation Correctness Scores": val_correct_scores,
-        # "Validation Correctness Results": save_large_result(val_correct_results, model_name, evaluator_model_name, "val_correct", random_seed, number_of_samples),
-        # "Validation Executable Time": val_time,
-        # "Validation Executable Scores": val_executable_scores,
-        # "Validation Executable Results": save_large_result(val_executable_results, model_name, evaluator_model_name, "val_executable", random_seed, number_of_samples),
-        # "Validation Combined Scores": val_combined_scores,
-        # "Test Match Time": test_time,
-        # "Test Match Scores": test_match_scores,
-        # "Test Match Results": save_large_result(test_match_results, model_name, evaluator_model_name, "test_match", random_seed, number_of_samples),
-        # "Test Correctness Time": test_time,
-        # "Test Correctness Scores": test_correct_scores,
-        # "Test Correctness Results": save_large_result(test_correct_results, model_name, evaluator_model_name, "test_correct", random_seed, number_of_samples),
-        # "Test Executable Time": test_time,
-        # "Test Executable Scores": test_executable_scores,
-        # "Test Executable Results": save_large_result(test_executable_results, model_name, evaluator_model_name, "test_executable", random_seed, number_of_samples),
-        # "Test Combined Scores": test_combined_scores,
+        "Test Match Time": test_time,
+        "Test Match Scores": test_match_scores,
+        "Test Match Results": save_large_result(test_match_results, model_name, evaluator_model_name, "test_match", random_seed, number_of_samples),
+        "Test Correctness Time": test_time,
+        "Test Correctness Scores": test_correct_scores,
+        "Test Correctness Results": save_large_result(test_correct_results, model_name, evaluator_model_name, "test_correct", random_seed, number_of_samples),
+        "Test Executable Time": test_time,
+        "Test Executable Scores": test_executable_scores,
+        "Test Executable Results": save_large_result(test_executable_results, model_name, evaluator_model_name, "test_executable", random_seed, number_of_samples),
+        "Test Combined Scores": test_combined_scores,
         "Optimization Time - LabeledFewShot": fewshot_optimization_time,
-        # "Validation Match Time - LabeledFewShot": val_fewshot_time,
-        # "Validation Match Scores - LabeledFewShot": val_fewshot_match_scores,
-        # "Validation Match Results - LabeledFewShot": save_large_result(val_fewshot_match_results, model_name, evaluator_model_name, "val_fewshot_match", random_seed, number_of_samples),
-        # "Validation Correctness Time - LabeledFewShot": val_fewshot_time,
-        # "Validation Correctness Scores - LabeledFewShot": val_fewshot_correct_scores,
-        # "Validation Correctness Results - LabeledFewShot": save_large_result(val_fewshot_correct_results, model_name, evaluator_model_name, "val_fewshot_correct", random_seed, number_of_samples),
-        # "Validation Executable Time - LabeledFewShot": val_fewshot_time,
-        # "Validation Executable Scores - LabeledFewShot": val_fewshot_executable_scores,
-        # "Validation Executable Results - LabeledFewShot": save_large_result(val_fewshot_executable_results, model_name, evaluator_model_name, "val_fewshot_executable", random_seed, number_of_samples),
-        # "Validation Combined Scores - LabeledFewShot": val_fewshot_combined_scores,
         "Test Match Time - LabeledFewShot": test_fewshot_time,
         "Test Match Scores - LabeledFewShot": test_fewshot_match_scores,
         "Test Match Results - LabeledFewShot": save_large_result(test_fewshot_match_results, model_name, evaluator_model_name, "test_fewshot_match", random_seed, number_of_samples),
@@ -556,16 +376,6 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Test Executable Results - LabeledFewShot": save_large_result(test_fewshot_executable_results, model_name, evaluator_model_name, "test_fewshot_executable", random_seed, number_of_samples),
         "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
         "Optimization Time - BootstrapFewShot": bootstrap_optimization_time,
-        # # "Validation Match Time - BootstrapFewShot": val_bootstrap_time,
-        # # "Validation Match Scores - BootstrapFewShot": val_bootstrap_match_scores,
-        # # "Validation Match Results - BootstrapFewShot": save_large_result(val_bootstrap_match_results, model_name, evaluator_model_name, "val_bootstrap_match", random_seed, number_of_samples),
-        # # "Validation Correctness Time - BootstrapFewShot": val_bootstrap_time,
-        # # "Validation Correctness Scores - BootstrapFewShot": val_bootstrap_correct_scores,
-        # # "Validation Correctness Results - BootstrapFewShot": save_large_result(val_bootstrap_correct_results, model_name, evaluator_model_name, "val_bootstrap_correct", random_seed, number_of_samples),
-        # # "Validation Executable Time - BootstrapFewShot": val_bootstrap_time,
-        # # "Validation Executable Scores - BootstrapFewShot": val_bootstrap_executable_scores,
-        # # "Validation Executable Results - BootstrapFewShot": save_large_result(val_bootstrap_executable_results, model_name, evaluator_model_name, "val_bootstrap_executable", random_seed, number_of_samples),
-        # # "Validation Combined Scores - BootstrapFewShot": val_bootstrap_combined_scores,
         "Test Match Time - BootstrapFewShot": test_bootstrap_time,
         "Test Match Scores - BootstrapFewShot": test_bootstrap_match_scores,
         "Test Match Results - BootstrapFewShot": save_large_result(test_bootstrap_match_results, model_name, evaluator_model_name, "test_bootstrap_match", random_seed, number_of_samples), 
