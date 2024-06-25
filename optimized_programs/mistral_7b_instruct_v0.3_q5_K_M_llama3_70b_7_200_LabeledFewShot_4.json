@@ -1,0 +1,23 @@
+{
+  "program": {
+    "backend": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "sql_prompt": "Find excavation sites with no artifacts.",
+        "sql_context": "CREATE TABLE excavations (id INT, location VARCHAR(255)); INSERT INTO excavations (id, location) VALUES (1, 'Egypt'), (2, 'USA'), (3, 'Mexico');",
+        "sql": "SELECT e.id, e.location FROM excavations e LEFT JOIN artifacts a ON e.id = a.excavation_id WHERE a.id IS NULL;"
+      },
+      {
+        "sql_prompt": "What is the production cost of each chemical product, grouped by the manufacturer?",
+        "sql_context": "CREATE TABLE ChemicalProducts (ProductID INT, ProductName TEXT, Manufacturer TEXT, ProductionCost DECIMAL(5,2)); INSERT INTO ChemicalProducts (ProductID, ProductName, Manufacturer, ProductionCost) VALUES (1, 'Product A', 'Manufacturer X', 50.5), (2, 'Product B', 'Manufacturer Y', 75.3), (3, 'Product C', 'Manufacturer X', 25.5), (4, 'Product D', 'Manufacturer Z', 150.3);",
+        "sql": "SELECT Manufacturer, SUM(ProductionCost) AS TotalProductionCost FROM ChemicalProducts GROUP BY Manufacturer;"
+      }
+    ],
+    "signature_instructions": "Signature for Text to SQL generation task.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Signature for Text to SQL generation task.",
+    "extended_signature_prefix": "Sql:"
+  }
+}
