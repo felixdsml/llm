@@ -1,3 +1,5 @@
+### Allows multiple metrics to be evaluated on one prediction.
+
 import contextlib
 import signal
 import sys

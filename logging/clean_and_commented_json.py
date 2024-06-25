@@ -62,8 +62,8 @@ model_info_base = [
     # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "command-r", "base_url": 'http://localhost:11435'},
     # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
-    {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
+    # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
     {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
     {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
@@ -74,7 +74,7 @@ model_info_eval = [
     {"evaluator_model": "llama3:70b", "evaluator_base_url": 'http://localhost:11434'}
 ]
 
-# base ollama model config
+# # # base ollama model config
 params_config = {
     "model_type": "text",
     "timeout_s": 120,
@@ -89,6 +89,23 @@ params_config = {
     # "format": "json"
 }
 
+# # # # base ollama model config
+# params_config = {
+#     "model_type": "text",
+#     "timeout_s": 140,
+#     "temperature": 0.2,
+#     "max_tokens": 300,
+#     "top_p": 1,
+#     "top_k": 10,
+#     "frequency_penalty": 1,
+#     "presence_penalty": 1.2,
+#     "n": 1,
+#     "num_ctx": 1024,
+#     "format": "json"
+# }
+
+
+# Settings Dict:  {'model': 'llama3:70b', 'options': {'temperature': 0.0, 'top_p': 1, 'top_k': 20, 'frequency_penalty': 0, 'presence_penalty': 0, 'num_ctx': 1024, 'num_predict': 150}, 'stream': False, }
 
 
 def load_and_sample_dataset(number_of_samples=200):
@@ -157,6 +174,7 @@ def save_optimized_program(optimized_program, model_name, evaluator_model_name, 
     optimized_program.save(filename)
     return filename
 
+#  Produce Json output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
 class TextToSql(dspy.Signature):
     """Signature for Text to SQL generation task."""
     sql_prompt = dspy.InputField(desc="Natural language query")
@@ -170,7 +188,7 @@ class SQLMatch(dspy.Signature):
     match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="True:")
 
 match_instruction = """
-Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Output only 'Yes' if it matches, otherwise output only 'No'.
+Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Output only 'Yes' if it matches, otherwise output only 'No'. 
 """
 SQLMatch = SQLMatch.with_instructions(match_instruction)
 
@@ -182,7 +200,7 @@ class SQLCorrectness(dspy.Signature):
     correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
 correctness_instruction = """
-Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context.
+Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. 
 """
 SQLCorrectness = SQLCorrectness.with_instructions(correctness_instruction)
 
@@ -193,7 +211,7 @@ class SQLExecutable(dspy.Signature):
     executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
 executable_instruction = """
-Answer only with Yes or No. Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. 
+Answer only with Yes or No. Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors.
 
 Criteria:
 1. The SQL query must not include any additional text such as rationale, prompts, or context.
@@ -408,17 +426,17 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Max Bootstrapped Demos": max_bootstrapped_demos,
         "Number of Candidate Programs": num_candidate_programs,
         # add the params config unpacked
-        "Model Type": params_config["model_type"],
-        "Timeout (s)": params_config["timeout_s"],
-        "Temperature": params_config["temperature"],
-        "Max Tokens": params_config["max_tokens"],
-        "Top P": params_config["top_p"],
-        "Top K": params_config["top_k"],
-        "Frequency Penalty": params_config["frequency_penalty"],
-        "Presence Penalty": params_config["presence_penalty"],
-        "N": params_config["n"],
-        "Num Ctx": params_config["num_ctx"],
-        "Format": params_config["format"]  
+        # "Model Type": params_config["model_type"],
+        # "Timeout (s)": params_config["timeout_s"],
+        # "Temperature": params_config["temperature"],
+        # "Max Tokens": params_config["max_tokens"],
+        # "Top P": params_config["top_p"],
+        # "Top K": params_config["top_k"],
+        # "Frequency Penalty": params_config["frequency_penalty"],
+        # "Presence Penalty": params_config["presence_penalty"],
+        # "N": params_config["n"],
+        # "Num Ctx": params_config["num_ctx"],
+        # "Format": params_config["format"]  
     })
 
     return results
@@ -435,14 +453,16 @@ excel_file = "log_evaluations.xlsx"
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
-        # base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
+        base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
         # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], temperature=0.2)
         
-        # Create instances of OllamaLocal for base models
-        base_lm = [dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config)]
+        # # Create instances of OllamaLocal for base models
+        # base_lm = [dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config)]
 
-        # Create instances of OllamaLocal for evaluator models
-        evaluator_lm = [dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], **params_config)]
+        # # Create instances of OllamaLocal for evaluator models
+        # evaluator_lm = [dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], **params_config)]
+        evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"],  **params_config)
 
         
         model_name = base_model["model"].replace(":", "_").replace("-", "_").replace(".", "_")

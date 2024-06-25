@@ -136,3 +136,4 @@ dmypy.json
 # Phoenix database
 phoenix/phoenix_data/phoenix.db
 phoenix/phoenix_data/phoenix.db.old
+phoenix/phoenix_data/phoenix.db*
