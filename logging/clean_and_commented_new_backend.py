@@ -29,6 +29,13 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from openinference.semconv.trace import SpanAttributes
 from phoenix.trace import using_project
 
+from dspy.modeling import TextBackend
+import openai
+client = openai.OpenAI(
+    api_key="sk-1234",
+    # base_url="http://localhost:4000" # LiteLLM Proxy is OpenAI compatible, Read More: https://docs.litellm.ai/docs/proxy/user_keys
+)
+
 # Configure logging with Phoenix
 # Phoenix is used for tracing and monitoring the evaluation process
 endpoint = "http://127.0.0.1:6006/v1/traces"
@@ -42,13 +49,13 @@ DSPyInstrumentor().instrument()
 NUM_THREADS = 16
 
 # Set debug flag
-IF_DEBUG = False
+IF_DEBUG = True
 
 # Number of samples to generate for evaluation
 number_of_samples = 200
 
 # Set random seed for reproducibility
-random_seed = 5
+random_seed = 2
 random.seed(random_seed)
 
 # Configuration for base and evaluator models
@@ -211,7 +218,7 @@ def match_metric(example, pred, trace=None):
     """Evaluate if the predicted SQL query matches the reference SQL query."""
     sql_reference, sql_predicted = example.sql, pred.sql
     match = dspy.Predict(SQLMatch)
-    with dspy.context(lm=evaluator_lm):
+    with dspy.context(lm=evaluator_lm_backend):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
     match_output = is_match.match.strip()
     match_score = int(re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None)
@@ -222,7 +229,7 @@ def correctness_metric(example, pred, trace=None):
     """Evaluate if the predicted SQL query correctly answers the natural language query."""
     sql_prompt, sql_context, sql_predicted = example.sql_prompt, example.sql_context, pred.sql
     correctness = dspy.Predict(SQLCorrectness)
-    with dspy.context(lm=evaluator_lm):
+    with dspy.context(lm=evaluator_lm_backend):
         is_correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql_predicted=sql_predicted)
     correct_output = is_correct.correct.strip()
     correct_score = int(re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None)
@@ -235,7 +242,7 @@ def executable_metric(example, pred, trace=None):
     sql_reference = example.sql
     sql_predicted = pred.sql
     executable = dspy.Predict(SQLExecutable)
-    with dspy.context(lm=evaluator_lm):
+    with dspy.context(lm=evaluator_lm_backend):
         is_executable = executable(sql_reference=sql_reference, sql_predicted=sql_predicted)
     executable_output = is_executable.executable.strip()
     executable_score = int(re.search(r'\bYes\b', executable_output, re.IGNORECASE) is not None)
@@ -252,7 +259,7 @@ def combined_metric(example, pred, trace=None):
     correctness = dspy.Predict(SQLCorrectness)
     executable = dspy.Predict(SQLExecutable)
     
-    with dspy.context(lm=evaluator_lm):
+    with dspy.context(lm=evaluator_lm_backend):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
         is_correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql_predicted=sql_predicted)
         is_executable = executable(sql_reference=sql_reference, sql_predicted=sql_predicted)
@@ -270,7 +277,7 @@ def combined_metric(example, pred, trace=None):
 
 
 
-def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
+def evaluate_model(base_lm, evaluator_lm_backend, trainset, valset, testset, model_name, evaluator_model_name, random_seed, run_index=None):
     """Evaluate the model using different optimization techniques and return the results."""
     
     def evaluate_set(devset, program, label):
@@ -348,7 +355,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     # # Optimize with BootstrapFewShotWithRandomSearch and evaluate
     max_bootstrapped_demos = 2
     num_candidate_programs = 2
-    bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
+    bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm_backend))
     (     test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_executable_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_executable_results, test_bootstrap_time, 
      bootstrap_optimization_time) = optimize_and_evaluate(bootstrap_optimizer, trainset, valset, testset, "BootstrapFewShot")
     
@@ -407,17 +414,27 @@ excel_file = "log_evaluations.xlsx"
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
-        base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
-        evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        # base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
+        # evaluator_lm_backend = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        
+      # Create model strings beforehand to avoid syntax issues
+        base_model_str = f"ollama/{base_model['model']}"
+        evaluator_model_str = f"ollama/{eval_model['evaluator_model']}"
+        
+        base_lm_backend = TextBackend(model=base_model_str, base_url="http://localhost:4001", params={"max_tokens": 500, "temperature": 0.0, "num_retries": 5})
+        evaluator_lm_backend = TextBackend(model=evaluator_model_str, base_url="http://localhost:4000", params={"max_tokens": 500, "temperature": 0.0, "num_retries": 5})
+
+        dspy.settings.configure(backend=base_lm_backend)
         
         model_name = base_model["model"].replace(":", "_").replace("-", "_").replace(".", "_")
         evaluator_model_name = eval_model["evaluator_model"].replace(":", "_").replace("-", "_").replace(".", "_")
         
         print("Starting evaluation for model: ", base_model["model"], " and evaluator: ", eval_model["evaluator_model"])
+
         
-        dspy.configure(lm=base_lm)
+        
         with using_project(f'{model_name}_{evaluator_model_name}_{random_seed}_{number_of_samples}'):
-            results = evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, base_model["model"], eval_model["evaluator_model"], random_seed, number_of_samples)
+            results = evaluate_model(base_lm_backend, evaluator_lm_backend, trainset, valset, testset, base_model["model"], eval_model["evaluator_model"], random_seed, number_of_samples)
         
         all_results = []
         all_results.append(results)
