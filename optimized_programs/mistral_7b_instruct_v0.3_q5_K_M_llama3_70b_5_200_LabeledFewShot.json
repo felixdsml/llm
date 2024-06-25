@@ -1,0 +1,33 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "sql_prompt": "How many yellow cards were given to 'Bayern Munich' players in the 'Champions League'?",
+        "sql_context": "CREATE TABLE teams (team_id INT, name TEXT); INSERT INTO teams (team_id, name) VALUES (1, 'Bayern Munich'), (2, 'Manchester United'); CREATE TABLE yellow_cards (card_id INT, team_id INT, cards INT); INSERT INTO yellow_cards (card_id, team_id, cards) VALUES (1, 1, 3), (2, 1, 2), (3, 2, 1); CREATE TABLE games (game_id INT, team_id INT, tournament TEXT); INSERT INTO games (game_id, team_id, tournament) VALUES (1, 1, 'Champions League'), (2, 1, 'Champions League'), (3, 2, 'Champions League');",
+        "sql": "SELECT SUM(cards) FROM yellow_cards JOIN games ON yellow_cards.team_id = games.team_id WHERE games.tournament = 'Champions League' AND yellow_cards.team_id = 1;"
+      },
+      {
+        "sql_prompt": "Show the number of visitors for each exhibition type",
+        "sql_context": "CREATE TABLE Exhibitions (id INT, name VARCHAR(255), type VARCHAR(255)); CREATE TABLE Tickets (id INT, visitor_id INT, exhibition_id INT);",
+        "sql": "SELECT Exhibitions.type, COUNT(Tickets.visitor_id) FROM Exhibitions JOIN Tickets ON Exhibitions.id = Tickets.exhibition_id GROUP BY Exhibitions.type;"
+      },
+      {
+        "sql_prompt": "Show the total calories of dishes served in 'HealthyHarvest' that have a price above the average.",
+        "sql_context": "CREATE TABLE Dishes (dish_name VARCHAR(50), calories INT, price INT); INSERT INTO Dishes (dish_name, calories, price) VALUES ('Chia Pudding', 250, 10), ('Veggie Wrap', 500, 15), ('Spinach Salad', 300, 12), ('Quinoa Salad', 400, 13);",
+        "sql": "SELECT SUM(Dishes.calories) FROM Dishes WHERE Dishes.dish_name LIKE 'HealthyHarvest%' AND Dishes.price > (SELECT AVG(price) FROM Dishes)"
+      },
+      {
+        "sql_prompt": "What was the total investment in climate communication in Europe and Central Asia in 2019?",
+        "sql_context": "CREATE TABLE climate_investments (id INT, region VARCHAR(50), category VARCHAR(50), year INT, investment FLOAT); INSERT INTO climate_investments (id, region, category, year, investment) VALUES (1, 'Western Europe', 'Climate Communication', 2018, 500000); INSERT INTO climate_investments (id, region, category, year, investment) VALUES (2, 'Eastern Europe', 'Climate Adaptation', 2019, 700000); INSERT INTO climate_investments (id, region, category, year, investment) VALUES (3, 'Central Asia', 'Climate Communication', 2019, 800000);",
+        "sql": "SELECT SUM(investment) FROM climate_investments WHERE category = 'Climate Communication' AND (region = 'Europe' OR region = 'Central Asia') AND year = 2019;"
+      }
+    ],
+    "signature_instructions": "Signature for Text to SQL generation task.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Signature for Text to SQL generation task.",
+    "extended_signature_prefix": "Sql:"
+  }
+}

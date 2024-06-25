@@ -53,16 +53,16 @@ random.seed(random_seed)
 
 # Configuration for base and evaluator models
 model_info_base = [
-    {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
-    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "command-r", "base_url": 'http://localhost:11435'},
-    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "aya:35b", "base_url": 'http://localhost:11435'},
+    # {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
+    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
+    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
+    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "command-r", "base_url": 'http://localhost:11435'},
+    # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
     {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
     {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
@@ -73,6 +73,22 @@ model_info_base = [
 model_info_eval = [
     {"evaluator_model": "llama3:70b", "evaluator_base_url": 'http://localhost:11434'}
 ]
+
+# base ollama model config
+params_config = {
+    "model_type": "text",
+    "timeout_s": 120,
+    "temperature": 0.0,
+    "max_tokens": 150,
+    "top_p": 1,
+    "top_k": 20,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "n": 1,
+    "num_ctx": 1024,
+    # "format": "json"
+}
+
 
 
 def load_and_sample_dataset(number_of_samples=200):
@@ -391,6 +407,18 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Test Combined Scores - BootstrapFewShot": test_bootstrap_combined_scores,
         "Max Bootstrapped Demos": max_bootstrapped_demos,
         "Number of Candidate Programs": num_candidate_programs,
+        # add the params config unpacked
+        "Model Type": params_config["model_type"],
+        "Timeout (s)": params_config["timeout_s"],
+        "Temperature": params_config["temperature"],
+        "Max Tokens": params_config["max_tokens"],
+        "Top P": params_config["top_p"],
+        "Top K": params_config["top_k"],
+        "Frequency Penalty": params_config["frequency_penalty"],
+        "Presence Penalty": params_config["presence_penalty"],
+        "N": params_config["n"],
+        "Num Ctx": params_config["num_ctx"],
+        "Format": params_config["format"]  
     })
 
     return results
@@ -407,8 +435,15 @@ excel_file = "log_evaluations.xlsx"
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
-        base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
-        evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        # base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
+        # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        
+        # Create instances of OllamaLocal for base models
+        base_lm = [dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config)]
+
+        # Create instances of OllamaLocal for evaluator models
+        evaluator_lm = [dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], **params_config)]
+
         
         model_name = base_model["model"].replace(":", "_").replace("-", "_").replace(".", "_")
         evaluator_model_name = eval_model["evaluator_model"].replace(":", "_").replace("-", "_").replace(".", "_")

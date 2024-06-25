@@ -1,0 +1,93 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "sql_prompt": "How many yellow cards were given to 'Bayern Munich' players in the 'Champions League'?",
+        "sql_context": "CREATE TABLE teams (team_id INT, name TEXT); INSERT INTO teams (team_id, name) VALUES (1, 'Bayern Munich'), (2, 'Manchester United'); CREATE TABLE yellow_cards (card_id INT, team_id INT, cards INT); INSERT INTO yellow_cards (card_id, team_id, cards) VALUES (1, 1, 3), (2, 1, 2), (3, 2, 1); CREATE TABLE games (game_id INT, team_id INT, tournament TEXT); INSERT INTO games (game_id, team_id, tournament) VALUES (1, 1, 'Champions League'), (2, 1, 'Champions League'), (3, 2, 'Champions League');",
+        "sql": "SELECT SUM(cards) FROM yellow_cards JOIN games ON yellow_cards.team_id = games.team_id WHERE games.tournament = 'Champions League' AND yellow_cards.team_id = 1;"
+      },
+      {
+        "sql_prompt": "Show the number of visitors for each exhibition type",
+        "sql_context": "CREATE TABLE Exhibitions (id INT, name VARCHAR(255), type VARCHAR(255)); CREATE TABLE Tickets (id INT, visitor_id INT, exhibition_id INT);",
+        "sql": "SELECT Exhibitions.type, COUNT(Tickets.visitor_id) FROM Exhibitions JOIN Tickets ON Exhibitions.id = Tickets.exhibition_id GROUP BY Exhibitions.type;"
+      },
+      {
+        "sql_prompt": "Show the total calories of dishes served in 'HealthyHarvest' that have a price above the average.",
+        "sql_context": "CREATE TABLE Dishes (dish_name VARCHAR(50), calories INT, price INT); INSERT INTO Dishes (dish_name, calories, price) VALUES ('Chia Pudding', 250, 10), ('Veggie Wrap', 500, 15), ('Spinach Salad', 300, 12), ('Quinoa Salad', 400, 13);",
+        "sql": "SELECT SUM(Dishes.calories) FROM Dishes WHERE Dishes.dish_name LIKE 'HealthyHarvest%' AND Dishes.price > (SELECT AVG(price) FROM Dishes)"
+      },
+      {
+        "sql_prompt": "What was the total investment in climate communication in Europe and Central Asia in 2019?",
+        "sql_context": "CREATE TABLE climate_investments (id INT, region VARCHAR(50), category VARCHAR(50), year INT, investment FLOAT); INSERT INTO climate_investments (id, region, category, year, investment) VALUES (1, 'Western Europe', 'Climate Communication', 2018, 500000); INSERT INTO climate_investments (id, region, category, year, investment) VALUES (2, 'Eastern Europe', 'Climate Adaptation', 2019, 700000); INSERT INTO climate_investments (id, region, category, year, investment) VALUES (3, 'Central Asia', 'Climate Communication', 2019, 800000);",
+        "sql": "SELECT SUM(investment) FROM climate_investments WHERE category = 'Climate Communication' AND (region = 'Europe' OR region = 'Central Asia') AND year = 2019;"
+      },
+      {
+        "sql_prompt": "What are the total fares collected from each vehicle type, sorted in descending order?",
+        "sql_context": "CREATE TABLE Fares (id INT, vehicle_type VARCHAR(10), fare DECIMAL(5,2)); INSERT INTO Fares (id, vehicle_type, fare) VALUES (1, 'Bus', 2.50), (2, 'Tram', 3.00), (3, 'Train', 5.00);",
+        "sql": "SELECT vehicle_type, SUM(fare) FROM Fares GROUP BY vehicle_type ORDER BY SUM(fare) DESC;"
+      },
+      {
+        "sql_prompt": "What is the total funding received by dance programs in California since 2017?",
+        "sql_context": "CREATE TABLE Funding (id INT, program VARCHAR(50), location VARCHAR(50), date DATE, amount DECIMAL(10,2)); INSERT INTO Funding (id, program, location, date, amount) VALUES (1, 'Dance', 'California', '2017-01-01', 5000);",
+        "sql": "SELECT SUM(amount) FROM Funding WHERE program = 'Dance' AND location = 'California' AND date >= '2017-01-01';"
+      },
+      {
+        "sql_prompt": "List all organizations that have received funding for ethical AI from government sources, but not from private sources.",
+        "sql_context": "CREATE TABLE organizations (org_id INT, name VARCHAR(50), gov_funding BOOLEAN, private_funding BOOLEAN); INSERT INTO organizations (org_id, name, gov_funding, private_funding) VALUES (1, 'Ethical AI Corp.', TRUE, FALSE), (2, 'AI for Good Inc.', FALSE, TRUE), (3, 'Government AI Initiative', TRUE, FALSE), (4, 'Non-profit AI', FALSE, FALSE);",
+        "sql": "SELECT name FROM organizations WHERE gov_funding = TRUE AND private_funding = FALSE;"
+      },
+      {
+        "sql_prompt": "What is the number of patients who received CBT in each region?",
+        "sql_context": "CREATE TABLE patients (id INT, region VARCHAR(255), country VARCHAR(255)); INSERT INTO patients (id, region, country) VALUES (1, 'North', 'USA'), (2, 'South', 'USA'), (3, 'North', 'Canada'); CREATE TABLE therapy (patient_id INT, therapy_type VARCHAR(255)); INSERT INTO therapy (patient_id, therapy_type) VALUES (1, 'CBT'), (2, 'CBT'), (3, 'DBT');",
+        "sql": "SELECT region, COUNT(*) as patient_count FROM patients JOIN therapy ON patients.id = therapy.patient_id WHERE therapy_type = 'CBT' GROUP BY region;"
+      },
+      {
+        "sql_prompt": "What is the total number of workers in each department across all factories?",
+        "sql_context": "CREATE TABLE factories (factory_id INT, department VARCHAR(255)); INSERT INTO factories VALUES (1, 'Assembly'), (1, 'Quality Control'), (2, 'Design'), (2, 'Testing'); CREATE TABLE workers (worker_id INT, factory_id INT, department VARCHAR(255), role VARCHAR(255)); INSERT INTO workers VALUES (1, 1, 'Assembly', 'Engineer'), (2, 1, 'Assembly', 'Technician'), (3, 1, 'Quality Control', 'Inspector'), (4, 2, 'Design', 'Architect'), (5, 2, 'Testing', 'Tester');",
+        "sql": "SELECT f.department, COUNT(w.worker_id) as total_workers FROM factories f JOIN workers w ON f.factory_id = w.factory_id GROUP BY f.department;"
+      },
+      {
+        "sql_prompt": "Which artifacts were discovered before 2000 in the 'Pompeii' excavation site?",
+        "sql_context": "CREATE TABLE ExcavationSites (site_id INT, site_name VARCHAR(50)); CREATE TABLE Artifacts (artifact_id INT, site_id INT, discovered_year INT); INSERT INTO ExcavationSites (site_id, site_name) VALUES (1, 'Pompeii'); INSERT INTO Artifacts (artifact_id, site_id, discovered_year) VALUES (1, 1, 1998), (2, 1, 2005), (3, 1, 1999), (4, 1, 1987);",
+        "sql": "SELECT Artifacts.artifact_id, Artifacts.site_id, Artifacts.discovered_year FROM Artifacts INNER JOIN ExcavationSites ON Artifacts.site_id = ExcavationSites.site_id WHERE ExcavationSites.site_name = 'Pompeii' AND Artifacts.discovered_year < 2000;"
+      },
+      {
+        "sql_prompt": "Find the total revenue for events with an attendance over 200 in 2021.",
+        "sql_context": "CREATE TABLE events (event_id INT, event_name VARCHAR(50), attendance INT, revenue DECIMAL(10,2), event_date DATE); INSERT INTO events (event_id, event_name, attendance, revenue, event_date) VALUES (1, 'Art Exhibition', 250, 15000, '2021-06-01'); INSERT INTO events (event_id, event_name, attendance, revenue, event_date) VALUES (2, 'Theater Performance', 180, 12000, '2021-07-15');",
+        "sql": "SELECT SUM(revenue) FROM events WHERE attendance > 200 AND YEAR(event_date) = 2021;"
+      },
+      {
+        "sql_prompt": "Which are the courses that are not taken by any students in grade 12 and do not use open pedagogy?",
+        "sql_context": "CREATE TABLE Courses (CourseID INT, Name VARCHAR(50), OpenPedagogy BOOLEAN); INSERT INTO Courses (CourseID, Name, OpenPedagogy) VALUES (5, 'English Literature', FALSE); INSERT INTO Courses (CourseID, Name, OpenPedagogy) VALUES (6, 'History', FALSE); INSERT INTO Students (StudentID, Name, MentalHealthScore, GradeLevel) VALUES (8, 'Quinn Purple', 75, 11);",
+        "sql": "SELECT Name FROM Courses WHERE NOT EXISTS (SELECT 1 FROM Students WHERE GradeLevel = 12 AND Courses.CourseID = Students.StudentID) AND OpenPedagogy = FALSE;"
+      },
+      {
+        "sql_prompt": "What were the top 5 malware types by the number of incidents in the North America region in 2021?",
+        "sql_context": "CREATE TABLE malware_incidents (id INT, malware_type VARCHAR(255), incident_count INT, region VARCHAR(255), occurrence_date DATE); INSERT INTO malware_incidents (id, malware_type, incident_count, region, occurrence_date) VALUES (1, 'Ransomware', 150, 'North America', '2021-01-01');",
+        "sql": "SELECT malware_type, incident_count FROM malware_incidents WHERE region = 'North America' AND occurrence_date >= '2021-01-01' AND occurrence_date < '2022-01-01' GROUP BY malware_type ORDER BY incident_count DESC LIMIT 5;"
+      },
+      {
+        "sql_prompt": "What is the number of female faculty members in the Physics department who have not been awarded any research grants?",
+        "sql_context": "CREATE TABLE faculty (id INT, name VARCHAR(50), department VARCHAR(50), gender VARCHAR(10)); INSERT INTO faculty (id, name, department, gender) VALUES (1, 'Alice', 'Physics', 'Female'); INSERT INTO faculty (id, name, department, gender) VALUES (2, 'Bob', 'Physics', 'Male'); CREATE TABLE research_grants (id INT, faculty_id INT, amount DECIMAL(10,2)); INSERT INTO research_grants (id, faculty_id, amount) VALUES (1, 2, 10000.00);",
+        "sql": "SELECT COUNT(*) FROM faculty f1 WHERE f1.department = 'Physics' AND f1.gender = 'Female' AND NOT EXISTS (SELECT 1 FROM research_grants rg WHERE rg.faculty_id = f1.id);"
+      },
+      {
+        "sql_prompt": "What was the total funding amount for startups founded by veterans in Japan?",
+        "sql_context": "CREATE TABLE company (id INT, name TEXT, country TEXT, founding_date DATE, founder_veteran BOOLEAN); INSERT INTO company (id, name, country, founding_date, founder_veteran) VALUES (1, 'Pi Corp', 'Japan', '2016-01-01', TRUE); INSERT INTO company (id, name, country, founding_date, founder_veteran) VALUES (2, 'Rho Inc', 'Japan', '2017-01-01', FALSE);",
+        "sql": "SELECT SUM(funding_amount) FROM funding INNER JOIN company ON funding.company_id = company.id WHERE company.country = 'Japan' AND company.founder_veteran = TRUE;"
+      },
+      {
+        "sql_prompt": "How many public service delivery requests were received from each age group of citizens in 2022?",
+        "sql_context": "CREATE TABLE Requests (Age_Group TEXT, Year INTEGER, Num_Requests INTEGER); INSERT INTO Requests (Age_Group, Year, Num_Requests) VALUES ('18-30', 2022, 200), ('31-50', 2022, 300), ('51-65', 2022, 250), ('66+', 2022, 150);",
+        "sql": "SELECT Age_Group, SUM(Num_Requests) FROM Requests WHERE Year = 2022 GROUP BY Age_Group;"
+      }
+    ],
+    "signature_instructions": "Signature for Text to SQL generation task.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Signature for Text to SQL generation task.",
+    "extended_signature_prefix": "Sql:"
+  }
+}
