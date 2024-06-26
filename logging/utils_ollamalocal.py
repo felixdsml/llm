@@ -1,5 +1,5 @@
 #### Adds JSON format to the settings_dict if specified ####
-
+from dspy import OllamaLocal
 
 import datetime
 import hashlib

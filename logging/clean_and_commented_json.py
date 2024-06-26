@@ -13,11 +13,11 @@ import dspy
 import phoenix as px
 
 from dspy import evaluate
+from dspy import settings
 from dspy.datasets import DataLoader
 from dspy.evaluate import Evaluate
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch, LabeledFewShot
 # from utils_random_search import BootstrapFewShotWithRandomSearch
-from utils_evaluate import Evaluate as Evaluate_multiple
 from dspy.teleprompt import LabeledFewShot
 from openinference.semconv.resource import ResourceAttributes
 from openinference.instrumentation.dspy import DSPyInstrumentor
@@ -29,6 +29,14 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from openinference.semconv.trace import SpanAttributes
 from phoenix.trace import using_project
 
+from utils_ollamalocal import OllamaLocal
+from utils_evaluate import Evaluate as Evaluate_multiple
+
+import json
+
+
+OllamaLocal = dspy.OllamaLocal
+
 # Configure logging with Phoenix
 # Phoenix is used for tracing and monitoring the evaluation process
 endpoint = "http://127.0.0.1:6006/v1/traces"
@@ -39,21 +47,26 @@ tracer_provider.add_span_processor(SimpleSpanProcessor(span_exporter=span_otlp_e
 trace_api.set_tracer_provider(tracer_provider=tracer_provider)
 DSPyInstrumentor().instrument()
 
+
+
 NUM_THREADS = 16
 
+show_guidelines = False
+dspy.settings.show_guidelines = False
+
 # Set debug flag
-IF_DEBUG = False
+IF_DEBUG = True
 
 # Number of samples to generate for evaluation
 number_of_samples = 200
 
 # Set random seed for reproducibility
-random_seed = 5
+random_seed = 10
 random.seed(random_seed)
 
 # Configuration for base and evaluator models
 model_info_base = [
-    # {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
     # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
     # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
@@ -65,8 +78,8 @@ model_info_base = [
     # {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
     # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
-    {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
+    # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
+    # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
 ]
 
@@ -74,23 +87,51 @@ model_info_eval = [
     {"evaluator_model": "llama3:70b", "evaluator_base_url": 'http://localhost:11434'}
 ]
 
+# # # # base ollama model config
+# params_config = {
+#     "model_type": "text",
+#     "timeout_s": 120,
+#     "temperature": 0.0,
+#     "max_tokens": 150,
+#     "top_p": 1,
+#     "top_k": 20,
+#     "frequency_penalty": 0,
+#     "presence_penalty": 0,
+#     "n": 1,
+#     "num_ctx": 1024,
+#     # "format": "json"
+# }
+
 # # # base ollama model config
-params_config = {
+# params_config_base = {
+#     "model_type": "text",
+#     "timeout_s": 120,
+#     "temperature": 0.0,
+#     "max_tokens": 150,
+#     "top_p": 1,
+#     "top_k": 20,
+#     "frequency_penalty": 0,
+#     "presence_penalty": 0,
+#     "n": 1,
+#     "num_ctx": 1024,
+#     # "format": "json"
+# }
+
+params_config_base = {
     "model_type": "text",
-    "timeout_s": 120,
-    "temperature": 0.0,
-    "max_tokens": 150,
-    "top_p": 1,
-    "top_k": 20,
-    "frequency_penalty": 0,
-    "presence_penalty": 0,
+    "timeout_s": 140,
+    "temperature": 0.1,
+    "max_tokens": 300,
+    "top_p": 0.9,
+    "top_k": 5,
+    "frequency_penalty": 1,
+    "presence_penalty": 1.2,
     "n": 1,
     "num_ctx": 1024,
     # "format": "json"
 }
-
 # # # # base ollama model config
-# params_config = {
+# params_config_eval = {
 #     "model_type": "text",
 #     "timeout_s": 140,
 #     "temperature": 0.2,
@@ -103,6 +144,20 @@ params_config = {
 #     "num_ctx": 1024,
 #     "format": "json"
 # }
+
+params_config_eval = {
+    "model_type": "text",
+    "timeout_s": 140,
+    "temperature": 0.1,
+    "max_tokens": 100,
+    "top_p": 0.9,
+    "top_k": 5,
+    "frequency_penalty": 1,
+    "presence_penalty": 1.2,
+    "n": 1,
+    "num_ctx": 1024,
+    "format": "json"
+}
 
 
 # Settings Dict:  {'model': 'llama3:70b', 'options': {'temperature': 0.0, 'top_p': 1, 'top_k': 20, 'frequency_penalty': 0, 'presence_penalty': 0, 'num_ctx': 1024, 'num_predict': 150}, 'stream': False, }
@@ -174,7 +229,17 @@ def save_optimized_program(optimized_program, model_name, evaluator_model_name, 
     optimized_program.save(filename)
     return filename
 
-#  Produce Json output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
+def parse_json_or_fallback(output, metric_name):
+    """Helper function to parse JSON output or fallback to regex if JSON parsing fails."""
+    try:
+        output_json = json.loads(output)
+        score = int(output_json.get('True', '').lower() == 'yes')
+    except json.JSONDecodeError:
+        print(f"Error parsing JSON output for {metric_name}: {output}, fallback to regex")
+        score = int(re.search(r'\bYes\b', output, re.IGNORECASE) is not None)
+    return score
+
+
 class TextToSql(dspy.Signature):
     """Signature for Text to SQL generation task."""
     sql_prompt = dspy.InputField(desc="Natural language query")
@@ -187,10 +252,43 @@ class SQLMatch(dspy.Signature):
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
     match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="True:")
 
-match_instruction = """
-Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Output only 'Yes' if it matches, otherwise output only 'No'. 
-"""
+# match_instruction = """
+# Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Think about why, build a rationale and then output a json with the key 'True' and the value 'Yes' if the queries match, otherwise 'No'.
+# {
+#   "rationale": "Explain why the queries match or do not match.",
+#   "True": "Yes" or "No"
+# }
+# """
+
+match_instruction = """Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Think about why, build a rationale and then output a only a json with the key 'True' and the value 'Yes' if the queries match, otherwise 'No'.
+
+Example 1 which does meet the criteria:
+Sql Reference: SELECT district, COUNT(*) FROM local_artisans GROUP BY district HAVING COUNT(*) > 5;,
+Sql Predicted: SELECT district, COUNT(*) FROM local_artisans GROUP BY district HAVING COUNT(*) > 5;,
+True:
+
+Output 1:
+{
+  "rationale": "The reference SQL query and the predicted SQL query are identical in terms of selected columns, table name, grouping condition, and having clause. Therefore, the predicted query matches the reference query exactly.",
+  "True": "Yes"
+}
+
+Example 2 which does not meet the criteria:
+Sql Reference: SELECT district, COUNT(*) FROM local_artisans GROUP BY district HAVING COUNT(*) > 5;,
+Sql Predicted: SELECT district FROM local_artisans GROUP BY district HAVING COUNT(*) > 5;
+True:
+
+Output 2:
+{
+  "rationale": "The reference SQL query includes both 'district' and 'COUNT(*)' in the SELECT statement, while the predicted SQL query only includes 'district'. Therefore, the predicted query does not match the reference query exactly.",
+  "True": "No"
+}
+
+Remember, the output should only include the key "True" and "rationale", no additional text or explanations.
+""" 
+
 SQLMatch = SQLMatch.with_instructions(match_instruction)
+# SQLMatch = SQLMatch.with_updated_fields
 
 class SQLCorrectness(dspy.Signature):
     """Signature for evaluating the correctness of SQL queries."""
@@ -199,35 +297,94 @@ class SQLCorrectness(dspy.Signature):
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
     correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
-correctness_instruction = """
-Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. 
+# correctness_instruction = """
+# Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. Produce Json output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
+# """
+
+correctness_instruction = """Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. Produce a JSON output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
+
+Example 1 which does meet the criteria:
+Sql Prompt: "Find the total number of policies for each policy state."
+Sql Context: "CREATE TABLE Policies (PolicyNumber INT, PolicyholderID INT, PolicyState VARCHAR(20)); INSERT INTO Policies (PolicyNumber, PolicyholderID, PolicyState) VALUES (1001, 3, 'California'), (1002, 4, 'California'), (1003, 5, 'Texas');"
+Sql Predicted: "SELECT PolicyState, COUNT(*) FROM Policies GROUP BY PolicyState;"
+True:
+
+Output 1:
+{
+  "rationale": "The predicted SQL query correctly counts the total number of policies for each policy state, which matches the natural language query.",
+  "True": "Yes"
+}
+
+Example 2 which does not meet the criteria:
+Sql Prompt: "Find the total number of policies for each policy state."
+Sql Context: "CREATE TABLE Policies (PolicyNumber INT, PolicyholderID INT, PolicyState VARCHAR(20)); INSERT INTO Policies (PolicyNumber, PolicyholderID, PolicyState) VALUES (1001, 3, 'California'), (1002, 4, 'California'), (1003, 5, 'Texas');"
+Sql Predicted: "SELECT PolicyState FROM Policies;"
+True:
+
+Output 2:
+{
+  "rationale": "The predicted SQL query does not count the total number of policies for each policy state. Instead, it only selects the policy states without aggregation, which does not match the natural language query.",
+  "True": "No"
+}
 """
+
 SQLCorrectness = SQLCorrectness.with_instructions(correctness_instruction)
 
 class SQLExecutable(dspy.Signature):
     """Signature for evaluating if the SQL query is executable."""
-    sql_reference = dspy.InputField(desc="Reference SQL query")
+    # sql_reference = dspy.InputField(desc="Reference SQL query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
     executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
-executable_instruction = """
-Answer only with Yes or No. Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors.
+# executable_instruction = """
+# Answer only with Yes or No. Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors.
+# Produce Json output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
 
-Criteria:
-1. The SQL query must not include any additional text such as rationale, prompts, or context.
-2. It must be executable without modifications.
+# Criteria:
+# 1. The SQL query must not include any additional text such as rationale, prompts, or context.
+# 2. It must be executable without modifications.
 
-Example which does not meet the criteria:
+# Example which does not meet the criteria:
 
         
-Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
-Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: ```sql WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week ) SELECT * FROM peak_times
-True: No
+# Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
+# Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: ```sql WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week ) SELECT * FROM peak_times
+# True: No
 
-Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
-Sql Predicted: WITH daily_usage AS (SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps), peak_times AS (SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week) SELECT * FROM peak_times
-True: Yes
+# Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
+# Sql Predicted: WITH daily_usage AS (SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps), peak_times AS (SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week) SELECT * FROM peak_times
+# True: Yes
+# """
+
+executable_instruction = """Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. Produce a JSON output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No', along with a rationale explaining why.
+
+Example 1 which does not meet the criteria:
+
+Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: ```sql WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak time, MAX(data_usage) AS peak usage FROM daily_usage GROUP BY day_of-week ) SELECT * FROM peak times;
+True:
+
+Output 1:
+{
+  "rationale": "The SQL query includes additional text that makes it non-executable as-is.",
+  "True": "No"
+}
+
+Example 2 which meets the criteria:
+
+Sql Predicted: WITH daily_usage AS (SELECT EXTRACT(DOW FROM usage_time) AS day_of-week, usage_time, data_usage FROM usage_timestamps), peak times AS (SELECT day_of-week, MAX(usage_time) AS peak time, MAX(data usage) AS peak usage FROM daily_usage GROUP BY day-of-week) SELECT * FROM peak times;
+True:
+
+Output 2:
+{
+  "rationale": "The SQL query is executable as-is, without any additional text.",
+  "True": "Yes"
+}
+
+Remember, the SQL query should be evaluated for executability, and the output should include a rationale explaining why it is executable or not.
+
 """
+
+
 SQLExecutable = SQLExecutable.with_instructions(executable_instruction)
 
 class TextToSqlProgram(dspy.Module):
@@ -248,9 +405,28 @@ def match_metric(example, pred, trace=None):
     with dspy.context(lm=evaluator_lm):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
     match_output = is_match.match.strip()
-    match_score = int(re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None)
     
+    match_score = parse_json_or_fallback(match_output, "match_metric")
+
     return match_score
+
+    
+    
+
+def executable_metric(example, pred, trace=None):
+    """Evaluate if the predicted SQL query is executable."""
+    sql_predicted = pred.sql
+    executable = dspy.Predict(SQLExecutable)
+    with dspy.context(lm=evaluator_lm):
+        is_executable = executable(sql_predicted=sql_predicted)
+    executable_output = is_executable.executable.strip()
+    
+    executable_score = parse_json_or_fallback(executable_output, "executable_metric")
+
+    return executable_score
+
+
+
 
 def correctness_metric(example, pred, trace=None):
     """Evaluate if the predicted SQL query correctly answers the natural language query."""
@@ -259,24 +435,13 @@ def correctness_metric(example, pred, trace=None):
     with dspy.context(lm=evaluator_lm):
         is_correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql_predicted=sql_predicted)
     correct_output = is_correct.correct.strip()
-    correct_score = int(re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None)
     
+    correct_score = parse_json_or_fallback(correct_output, "correctness_metric")
+
     return correct_score
 
 
-def executable_metric(example, pred, trace=None):
-    """Evaluate if the predicted SQL query is executable."""
-    sql_reference = example.sql
-    sql_predicted = pred.sql
-    executable = dspy.Predict(SQLExecutable)
-    with dspy.context(lm=evaluator_lm):
-        is_executable = executable(sql_reference=sql_reference, sql_predicted=sql_predicted)
-    executable_output = is_executable.executable.strip()
-    executable_score = int(re.search(r'\bYes\b', executable_output, re.IGNORECASE) is not None)
-    
-    return executable_score
 
-# Combined metric function
 def combined_metric(example, pred, trace=None):
     """Evaluate the match, correctness, and executability of the predicted SQL query."""
     sql_reference, sql_predicted = example.sql, pred.sql
@@ -289,18 +454,19 @@ def combined_metric(example, pred, trace=None):
     with dspy.context(lm=evaluator_lm):
         is_match = match(sql_reference=sql_reference, sql_predicted=sql_predicted)
         is_correct = correctness(sql_prompt=sql_prompt, sql_context=sql_context, sql_predicted=sql_predicted)
-        is_executable = executable(sql_reference=sql_reference, sql_predicted=sql_predicted)
+        is_executable = executable(sql_predicted=sql_predicted)
         
     match_output = is_match.match.strip()
     correct_output = is_correct.correct.strip()
     executable_output = is_executable.executable.strip()
     
-    match_score = int(re.search(r'\bYes\b', match_output, re.IGNORECASE) is not None)
-    correct_score = int(re.search(r'\bYes\b', correct_output, re.IGNORECASE) is not None)
-    executable_score = int(re.search(r'\bYes\b', executable_output, re.IGNORECASE) is not None)
+    match_score = parse_json_or_fallback(match_output, "match_metric")
+    correct_score = parse_json_or_fallback(correct_output, "correctness_metric")
+    executable_score = parse_json_or_fallback(executable_output, "executable_metric")
     
     score = (executable_score << 2) | (match_score << 1) | correct_score
     return score / 7  # Normalize to a score between 0 and 1
+
 
 
 
@@ -426,17 +592,17 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Max Bootstrapped Demos": max_bootstrapped_demos,
         "Number of Candidate Programs": num_candidate_programs,
         # add the params config unpacked
-        # "Model Type": params_config["model_type"],
-        # "Timeout (s)": params_config["timeout_s"],
-        # "Temperature": params_config["temperature"],
-        # "Max Tokens": params_config["max_tokens"],
-        # "Top P": params_config["top_p"],
-        # "Top K": params_config["top_k"],
-        # "Frequency Penalty": params_config["frequency_penalty"],
-        # "Presence Penalty": params_config["presence_penalty"],
-        # "N": params_config["n"],
-        # "Num Ctx": params_config["num_ctx"],
-        # "Format": params_config["format"]  
+        "Model Type": params_config_base["model_type"],
+        "Timeout (s)": params_config_base["timeout_s"],
+        "Temperature": params_config_base["temperature"],
+        "Max Tokens": params_config_base["max_tokens"],
+        "Top P": params_config_base["top_p"],
+        "Top K": params_config_base["top_k"],
+        "Frequency Penalty": params_config_base["frequency_penalty"],
+        "Presence Penalty": params_config_base["presence_penalty"],
+        "N": params_config_base["n"],
+        "Num Ctx": params_config_base["num_ctx"],
+        # "Format": params_config_base["format"]  
     })
 
     return results
@@ -453,7 +619,7 @@ excel_file = "log_evaluations.xlsx"
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
-        base_lm = dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"])
+        base_lm = OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config_base)
         # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
         # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], temperature=0.2)
         
@@ -462,7 +628,7 @@ for base_model in model_info_base:
 
         # # Create instances of OllamaLocal for evaluator models
         # evaluator_lm = [dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], **params_config)]
-        evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"],  **params_config)
+        evaluator_lm = OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"],  **params_config_eval)
 
         
         model_name = base_model["model"].replace(":", "_").replace("-", "_").replace(".", "_")
