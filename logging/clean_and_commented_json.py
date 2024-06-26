@@ -55,7 +55,7 @@ show_guidelines = False
 dspy.settings.show_guidelines = False
 
 # Set debug flag
-IF_DEBUG = True
+IF_DEBUG = False
 
 # Number of samples to generate for evaluation
 number_of_samples = 200
@@ -67,19 +67,19 @@ random.seed(random_seed)
 # Configuration for base and evaluator models
 model_info_base = [
     {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
-    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "command-r", "base_url": 'http://localhost:11435'},
+    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
+    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
+    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
+    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "command-r", "base_url": 'http://localhost:11435'},
     # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
-    # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
+    {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
-    # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
+    {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
+    {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
 ]
 
@@ -156,7 +156,8 @@ params_config_eval = {
     "presence_penalty": 1.2,
     "n": 1,
     "num_ctx": 1024,
-    "format": "json"
+    "format": "json",
+    # "stop": "}"
 }
 
 
@@ -232,10 +233,18 @@ def save_optimized_program(optimized_program, model_name, evaluator_model_name, 
 def parse_json_or_fallback(output, metric_name):
     """Helper function to parse JSON output or fallback to regex if JSON parsing fails."""
     try:
-        output_json = json.loads(output)
+        # Fix escape sequences
+        output = output.replace("\\", "\\\\")
+        # Strip leading/trailing whitespace and extraneous text before JSON parsing
+        output = output.strip()
+        json_start = output.find('{')
+        json_end = output.rfind('}') + 1
+        clean_output = output[json_start:json_end]
+
+        output_json = json.loads(clean_output)
         score = int(output_json.get('True', '').lower() == 'yes')
-    except json.JSONDecodeError:
-        print(f"Error parsing JSON output for {metric_name}: {output}, fallback to regex")
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON output for {metric_name}: {e} - {output}, fallback to regex")
         score = int(re.search(r'\bYes\b', output, re.IGNORECASE) is not None)
     return score
 
@@ -285,6 +294,7 @@ Output 2:
 }
 
 Remember, the output should only include the key "True" and "rationale", no additional text or explanations.
+Here is the real input:
 """ 
 
 SQLMatch = SQLMatch.with_instructions(match_instruction)
@@ -326,6 +336,9 @@ Output 2:
   "rationale": "The predicted SQL query does not count the total number of policies for each policy state. Instead, it only selects the policy states without aggregation, which does not match the natural language query.",
   "True": "No"
 }
+
+Remember, the output should only include the key "True" and "rationale", no additional text or explanations.
+Here is the real input:
 """
 
 SQLCorrectness = SQLCorrectness.with_instructions(correctness_instruction)
@@ -380,8 +393,8 @@ Output 2:
   "True": "Yes"
 }
 
-Remember, the SQL query should be evaluated for executability, and the output should include a rationale explaining why it is executable or not.
-
+Remember, the output should only include the key "True" and "rationale", no additional text or explanations.
+Here is the real input:
 """
 
 
