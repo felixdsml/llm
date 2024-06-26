@@ -630,7 +630,8 @@ for base_model in model_info_base:
 
         OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
         
-        base_lm = dspy.OpenAI(model=base_model["model"], api_key=OPENAI_API_KEY)#, **params_config_base)
+        base_lm = dspy.OpenAI(model=base_model["model"])#, api_key=OPENAI_API_KEY)#, **params_config_base)
+        print(base_lm)
         
 
         evaluator_lm = OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"],  **params_config_eval)
