@@ -9,6 +9,7 @@ import requests
 
 from dsp.modules.lm import LM
 
+DEBUG = 0
 
 def post_request_metadata(model_name, prompt):
     """Creates a serialized request object for the Ollama API."""
@@ -89,16 +90,17 @@ class OllamaLocal(LM):
             "options": {k: v for k, v in kwargs.items() if k not in ["n", "max_tokens"]},
             "stream": False,
         }
-        
-        print("\n\n\n KWARGS: ", kwargs)
-        print("\n\n\n SETTINGS DICT: ", settings_dict)
+        if DEBUG:
+            print("\n\n\n KWARGS: ", kwargs)
+            print("\n\n\n SETTINGS DICT: ", settings_dict)
         ##### Adding format to settings_dict if specified #####
         if "format" in kwargs and kwargs["format"] == "json":
             settings_dict["format"] = "json"
             # remove it from settings_dict["options"]
             del settings_dict["options"]["format"]
         #######################################################
-        print("\n\n\n SETTINGS DICT_Post: ", settings_dict)
+        if DEBUG:
+            print("\n\n\n SETTINGS DICT_Post: ", settings_dict)
         
         
         if self.model_type == "chat":
@@ -111,8 +113,9 @@ class OllamaLocal(LM):
         for i in range(kwargs["n"]):
             response = requests.post(urlstr, json=settings_dict, timeout=self.timeout_s)
             
-            print("URL: ", urlstr)
-            print("Settings Dict: ", settings_dict)
+            if DEBUG:
+                print("URL: ", urlstr)
+                print("Settings Dict: ", settings_dict)
             
             # Check if the request was successful (HTTP status code 200)
             if response.status_code != 200:
@@ -120,14 +123,16 @@ class OllamaLocal(LM):
                 print(f"Error: CODE {response.status_code} - {response.text}")
 
             response_json = response.json()
-            print("Response JSON: ", response_json)
+            if DEBUG:
+                print("Response JSON: ", response_json)
 
             text = (
                 response_json.get("message").get("content")
                 if self.model_type == "chat"
                 else response_json.get("response")
             )
-            print("Text: ", text)
+            if DEBUG:
+                print("Text: ", text)
             request_info["choices"].append(
                 {
                     "index": i,
@@ -158,7 +163,8 @@ class OllamaLocal(LM):
         }
         self.history.append(history)
         
-        print("Request Info: ", request_info)
+        if DEBUG:
+            print("Request Info: ", request_info)
 
         return request_info
 

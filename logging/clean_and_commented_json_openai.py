@@ -66,20 +66,8 @@ random.seed(random_seed)
 
 # Configuration for base and evaluator models
 model_info_base = [
-    # {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
-    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "command-r", "base_url": 'http://localhost:11435'},
-    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
-    # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
-    # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
-    # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
+    {"model": "gpt-3.5-turbo", "base_url": 'http://localhost:11435'},
+
     # Add more base models here as needed
 ]
 
@@ -118,8 +106,8 @@ model_info_eval = [
 # }
 
 params_config_base = {
-    "model_type": "text",
-    "timeout_s": 140,
+    # "model_type": "text",
+    # "timeout_s": 140,
     "temperature": 0.1,
     "max_tokens": 150,
     "top_p": 0.9,
@@ -609,8 +597,8 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         # "Max Bootstrapped Demos": max_bootstrapped_demos,
         # "Number of Candidate Programs": num_candidate_programs,
         # add the params config unpacked
-        "Model Type": params_config_base["model_type"],
-        "Timeout (s)": params_config_base["timeout_s"],
+        # "Model Type": params_config_base["model_type"],
+        # "Timeout (s)": params_config_base["timeout_s"],
         "Temperature": params_config_base["temperature"],
         "Max Tokens": params_config_base["max_tokens"],
         "Top P": params_config_base["top_p"],
@@ -636,15 +624,15 @@ excel_file = "log_evaluations.xlsx"
 
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
-        base_lm = OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config_base)
-        # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
-        # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], temperature=0.2)
+        # base_lm = OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config_base)
         
-        # # Create instances of OllamaLocal for base models
-        # base_lm = [dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config)]
+        import os
 
-        # # Create instances of OllamaLocal for evaluator models
-        # evaluator_lm = [dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], **params_config)]
+        OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+        
+        base_lm = dspy.OpenAI(model=base_model["model"], api_key=OPENAI_API_KEY)#, **params_config_base)
+        
+
         evaluator_lm = OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"],  **params_config_eval)
 
         
