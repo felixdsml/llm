@@ -121,7 +121,7 @@ params_config_base = {
     "model_type": "text",
     "timeout_s": 140,
     "temperature": 0.1,
-    "max_tokens": 300,
+    "max_tokens": 150,
     "top_p": 0.9,
     "top_k": 5,
     "frequency_penalty": 1,
@@ -149,7 +149,7 @@ params_config_eval = {
     "model_type": "text",
     "timeout_s": 140,
     "temperature": 0.1,
-    "max_tokens": 100,
+    "max_tokens": 120,
     "top_p": 0.9,
     "top_k": 5,
     "frequency_penalty": 1,
@@ -254,6 +254,9 @@ class TextToSql(dspy.Signature):
     sql_prompt = dspy.InputField(desc="Natural language query")
     sql_context = dspy.InputField(desc="Context for the query")
     sql = dspy.OutputField(desc="SQL query")
+
+TextToSqlInstruction = """From the given natural language query and context, generate the corresponding SQL query. The SQL query should be executable and correctly answer the natural language query based on the context provided. The output should only include the SQL query without any additional text or explanations."""
+TextToSql = TextToSql.with_instructions(TextToSqlInstruction)
 
 class SQLMatch(dspy.Signature):
     """Signature for matching SQL queries."""
@@ -404,7 +407,8 @@ class TextToSqlProgram(dspy.Module):
     """A module that represents the program for generating SQL from natural language."""
     def __init__(self):
         super().__init__()
-        self.program = dspy.ChainOfThought(signature=TextToSql)
+        # self.program = dspy.ChainOfThought(signature=TextToSql)
+        self.program = dspy.Predict(signature=TextToSql)
 
     def forward(self, sql_prompt, sql_context):
         # current_span = trace_api.get_current_span()
@@ -477,7 +481,7 @@ def combined_metric(example, pred, trace=None):
     correct_score = parse_json_or_fallback(correct_output, "correctness_metric")
     executable_score = parse_json_or_fallback(executable_output, "executable_metric")
     
-    score = (executable_score << 2) | (match_score << 1) | correct_score
+    score = (executable_score << 2) | (correct_score << 1) | match_score
     return score / 7  # Normalize to a score between 0 and 1
 
 
@@ -519,7 +523,7 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
 
         
         # Combine the scores
-        combined_score = ((int(match_score) << 2) | (int(correct_score) << 1) | int(executable_score)) / 7
+        combined_score = ((int(executable_score) << 2) | (int(correct_score) << 1) | int(match_score)) / 7
         eval_time = round(time.time() - start_time, 2)
         
         return match_score, correct_score, executable_score, combined_score, match_result, correct_result, executable_result, eval_time
@@ -553,13 +557,13 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
   
     test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time = evaluate_set(testset, generate_sql_query, "test")
     
-    # # Optimize with LabeledFewShot and evaluate
-    labeled_fewshot_optimizer = LabeledFewShot(k=4)
-    (test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_executable_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_executable_results, test_fewshot_time, 
-     fewshot_optimization_time) = optimize_and_evaluate(labeled_fewshot_optimizer, trainset, valset, testset, "LabeledFewShot")
+    # # # Optimize with LabeledFewShot and evaluate
+    # labeled_fewshot_optimizer = LabeledFewShot(k=4)
+    # (test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_executable_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_executable_results, test_fewshot_time, 
+    #  fewshot_optimization_time) = optimize_and_evaluate(labeled_fewshot_optimizer, trainset, valset, testset, "LabeledFewShot")
     
     # # Optimize with BootstrapFewShotWithRandomSearch and evaluate
-    max_bootstrapped_demos = 2
+    max_bootstrapped_demos = 3
     num_candidate_programs = 2
     bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
     (     test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_executable_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_executable_results, test_bootstrap_time, 
@@ -580,17 +584,17 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Test Executable Scores": test_executable_scores,
         "Test Executable Results": save_large_result(test_executable_results, model_name, evaluator_model_name, "test_executable", random_seed, number_of_samples),
         "Test Combined Scores": test_combined_scores,
-        "Optimization Time - LabeledFewShot": fewshot_optimization_time,
-        "Test Match Time - LabeledFewShot": test_fewshot_time,
-        "Test Match Scores - LabeledFewShot": test_fewshot_match_scores,
-        "Test Match Results - LabeledFewShot": save_large_result(test_fewshot_match_results, model_name, evaluator_model_name, "test_fewshot_match", random_seed, number_of_samples),
-        "Test Correctness Time - LabeledFewShot": test_fewshot_time,
-        "Test Correctness Scores - LabeledFewShot": test_fewshot_correct_scores,
-        "Test Correctness Results - LabeledFewShot": save_large_result(test_fewshot_correct_results, model_name, evaluator_model_name, "test_fewshot_correct", random_seed, number_of_samples),
-        "Test Executable Time - LabeledFewShot": test_fewshot_time,
-        "Test Executable Scores - LabeledFewShot": test_fewshot_executable_scores,
-        "Test Executable Results - LabeledFewShot": save_large_result(test_fewshot_executable_results, model_name, evaluator_model_name, "test_fewshot_executable", random_seed, number_of_samples),
-        "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
+        # "Optimization Time - LabeledFewShot": fewshot_optimization_time,
+        # "Test Match Time - LabeledFewShot": test_fewshot_time,
+        # "Test Match Scores - LabeledFewShot": test_fewshot_match_scores,
+        # "Test Match Results - LabeledFewShot": save_large_result(test_fewshot_match_results, model_name, evaluator_model_name, "test_fewshot_match", random_seed, number_of_samples),
+        # "Test Correctness Time - LabeledFewShot": test_fewshot_time,
+        # "Test Correctness Scores - LabeledFewShot": test_fewshot_correct_scores,
+        # "Test Correctness Results - LabeledFewShot": save_large_result(test_fewshot_correct_results, model_name, evaluator_model_name, "test_fewshot_correct", random_seed, number_of_samples),
+        # "Test Executable Time - LabeledFewShot": test_fewshot_time,
+        # "Test Executable Scores - LabeledFewShot": test_fewshot_executable_scores,
+        # "Test Executable Results - LabeledFewShot": save_large_result(test_fewshot_executable_results, model_name, evaluator_model_name, "test_fewshot_executable", random_seed, number_of_samples),
+        # "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
         "Optimization Time - BootstrapFewShot": bootstrap_optimization_time,
         "Test Match Time - BootstrapFewShot": test_bootstrap_time,
         "Test Match Scores - BootstrapFewShot": test_bootstrap_match_scores,
