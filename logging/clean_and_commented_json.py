@@ -58,10 +58,10 @@ dspy.settings.show_guidelines = False
 IF_DEBUG = False
 
 # Number of samples to generate for evaluation
-number_of_samples = 200
+number_of_samples = 400
 
 # Set random seed for reproducibility
-random_seed = 10
+random_seed = 100
 random.seed(random_seed)
 
 # Configuration for base and evaluator models
@@ -234,7 +234,7 @@ def parse_json_or_fallback(output, metric_name):
     """Helper function to parse JSON output or fallback to regex if JSON parsing fails."""
     try:
         # Fix escape sequences
-        output = output.replace("\\", "\\\\")
+        output = output.replace("\\", "\\\\").replace("\"", "\\\"")
         # Strip leading/trailing whitespace and extraneous text before JSON parsing
         output = output.strip()
         json_start = output.find('{')
@@ -558,16 +558,16 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
     test_match_scores, test_correct_scores, test_executable_scores, test_combined_scores, test_match_results, test_correct_results, test_executable_results, test_time = evaluate_set(testset, generate_sql_query, "test")
     
     # # # Optimize with LabeledFewShot and evaluate
-    # labeled_fewshot_optimizer = LabeledFewShot(k=4)
-    # (test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_executable_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_executable_results, test_fewshot_time, 
-    #  fewshot_optimization_time) = optimize_and_evaluate(labeled_fewshot_optimizer, trainset, valset, testset, "LabeledFewShot")
+    labeled_fewshot_optimizer = LabeledFewShot(k=4)
+    (test_fewshot_match_scores, test_fewshot_correct_scores, test_fewshot_executable_scores, test_fewshot_combined_scores, test_fewshot_match_results, test_fewshot_correct_results, test_fewshot_executable_results, test_fewshot_time, 
+     fewshot_optimization_time) = optimize_and_evaluate(labeled_fewshot_optimizer, trainset, valset, testset, "LabeledFewShot")
     
-    # # Optimize with BootstrapFewShotWithRandomSearch and evaluate
-    max_bootstrapped_demos = 3
-    num_candidate_programs = 2
-    bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
-    (     test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_executable_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_executable_results, test_bootstrap_time, 
-     bootstrap_optimization_time) = optimize_and_evaluate(bootstrap_optimizer, trainset, valset, testset, "BootstrapFewShot")
+    # # # Optimize with BootstrapFewShotWithRandomSearch and evaluate
+    # max_bootstrapped_demos = 2
+    # num_candidate_programs = 2
+    # bootstrap_optimizer = BootstrapFewShotWithRandomSearch(metric=combined_metric, max_bootstrapped_demos=max_bootstrapped_demos, num_candidate_programs=num_candidate_programs, num_threads=NUM_THREADS, teacher_settings=dict(lm=evaluator_lm))
+    # (test_bootstrap_match_scores, test_bootstrap_correct_scores, test_bootstrap_executable_scores, test_bootstrap_combined_scores, test_bootstrap_match_results, test_bootstrap_correct_results, test_bootstrap_executable_results, test_bootstrap_time, 
+    #  bootstrap_optimization_time) = optimize_and_evaluate(bootstrap_optimizer, trainset, valset, testset, "BootstrapFewShot")
     
     total_time = round(time.time() - total_start_time, 2)
     print("Evaluation complete")
@@ -584,30 +584,30 @@ def evaluate_model(base_lm, evaluator_lm, trainset, valset, testset, model_name,
         "Test Executable Scores": test_executable_scores,
         "Test Executable Results": save_large_result(test_executable_results, model_name, evaluator_model_name, "test_executable", random_seed, number_of_samples),
         "Test Combined Scores": test_combined_scores,
-        # "Optimization Time - LabeledFewShot": fewshot_optimization_time,
-        # "Test Match Time - LabeledFewShot": test_fewshot_time,
-        # "Test Match Scores - LabeledFewShot": test_fewshot_match_scores,
-        # "Test Match Results - LabeledFewShot": save_large_result(test_fewshot_match_results, model_name, evaluator_model_name, "test_fewshot_match", random_seed, number_of_samples),
-        # "Test Correctness Time - LabeledFewShot": test_fewshot_time,
-        # "Test Correctness Scores - LabeledFewShot": test_fewshot_correct_scores,
-        # "Test Correctness Results - LabeledFewShot": save_large_result(test_fewshot_correct_results, model_name, evaluator_model_name, "test_fewshot_correct", random_seed, number_of_samples),
-        # "Test Executable Time - LabeledFewShot": test_fewshot_time,
-        # "Test Executable Scores - LabeledFewShot": test_fewshot_executable_scores,
-        # "Test Executable Results - LabeledFewShot": save_large_result(test_fewshot_executable_results, model_name, evaluator_model_name, "test_fewshot_executable", random_seed, number_of_samples),
-        # "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
-        "Optimization Time - BootstrapFewShot": bootstrap_optimization_time,
-        "Test Match Time - BootstrapFewShot": test_bootstrap_time,
-        "Test Match Scores - BootstrapFewShot": test_bootstrap_match_scores,
-        "Test Match Results - BootstrapFewShot": save_large_result(test_bootstrap_match_results, model_name, evaluator_model_name, "test_bootstrap_match", random_seed, number_of_samples), 
-        "Test Correctness Time - BootstrapFewShot": test_bootstrap_time,
-        "Test Correctness Scores - BootstrapFewShot": test_bootstrap_correct_scores,
-        "Test Correctness Results - BootstrapFewShot": save_large_result(test_bootstrap_correct_results, model_name, evaluator_model_name, "test_bootstrap_correct", random_seed, number_of_samples),
-        "Test Executable Time - BootstrapFewShot": test_bootstrap_time,
-        "Test Executable Scores - BootstrapFewShot": test_bootstrap_executable_scores,
-        "Test Executable Results - BootstrapFewShot": save_large_result(test_bootstrap_executable_results, model_name, evaluator_model_name, "test_bootstrap_executable", random_seed, number_of_samples),
-        "Test Combined Scores - BootstrapFewShot": test_bootstrap_combined_scores,
-        "Max Bootstrapped Demos": max_bootstrapped_demos,
-        "Number of Candidate Programs": num_candidate_programs,
+        "Optimization Time - LabeledFewShot": fewshot_optimization_time,
+        "Test Match Time - LabeledFewShot": test_fewshot_time,
+        "Test Match Scores - LabeledFewShot": test_fewshot_match_scores,
+        "Test Match Results - LabeledFewShot": save_large_result(test_fewshot_match_results, model_name, evaluator_model_name, "test_fewshot_match", random_seed, number_of_samples),
+        "Test Correctness Time - LabeledFewShot": test_fewshot_time,
+        "Test Correctness Scores - LabeledFewShot": test_fewshot_correct_scores,
+        "Test Correctness Results - LabeledFewShot": save_large_result(test_fewshot_correct_results, model_name, evaluator_model_name, "test_fewshot_correct", random_seed, number_of_samples),
+        "Test Executable Time - LabeledFewShot": test_fewshot_time,
+        "Test Executable Scores - LabeledFewShot": test_fewshot_executable_scores,
+        "Test Executable Results - LabeledFewShot": save_large_result(test_fewshot_executable_results, model_name, evaluator_model_name, "test_fewshot_executable", random_seed, number_of_samples),
+        "Test Combined Scores - LabeledFewShot": test_fewshot_combined_scores,
+        # "Optimization Time - BootstrapFewShot": bootstrap_optimization_time,
+        # "Test Match Time - BootstrapFewShot": test_bootstrap_time,
+        # "Test Match Scores - BootstrapFewShot": test_bootstrap_match_scores,
+        # "Test Match Results - BootstrapFewShot": save_large_result(test_bootstrap_match_results, model_name, evaluator_model_name, "test_bootstrap_match", random_seed, number_of_samples), 
+        # "Test Correctness Time - BootstrapFewShot": test_bootstrap_time,
+        # "Test Correctness Scores - BootstrapFewShot": test_bootstrap_correct_scores,
+        # "Test Correctness Results - BootstrapFewShot": save_large_result(test_bootstrap_correct_results, model_name, evaluator_model_name, "test_bootstrap_correct", random_seed, number_of_samples),
+        # "Test Executable Time - BootstrapFewShot": test_bootstrap_time,
+        # "Test Executable Scores - BootstrapFewShot": test_bootstrap_executable_scores,
+        # "Test Executable Results - BootstrapFewShot": save_large_result(test_bootstrap_executable_results, model_name, evaluator_model_name, "test_bootstrap_executable", random_seed, number_of_samples),
+        # "Test Combined Scores - BootstrapFewShot": test_bootstrap_combined_scores,
+        # "Max Bootstrapped Demos": max_bootstrapped_demos,
+        # "Number of Candidate Programs": num_candidate_programs,
         # add the params config unpacked
         "Model Type": params_config_base["model_type"],
         "Timeout (s)": params_config_base["timeout_s"],
