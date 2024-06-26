@@ -66,13 +66,13 @@ random.seed(random_seed)
 
 # Configuration for base and evaluator models
 model_info_base = [
-    {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
-    {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
-    {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
-    {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
-    {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
-    {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "mistral:7b-instruct-v0.3-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'},
+    # {"model": "llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest", "base_url": 'http://localhost:11435'} ,
+    # {"model": "Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest", "base_url": 'http://localhost:11435'},
+    # {"model": "phi3:14b-medium-4k-instruct-q5_K_M", "base_url": 'http://localhost:11435'}, 
+    # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     {"model": "command-r", "base_url": 'http://localhost:11435'},
     # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
     {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
@@ -234,7 +234,7 @@ def parse_json_or_fallback(output, metric_name):
     """Helper function to parse JSON output or fallback to regex if JSON parsing fails."""
     try:
         # Fix escape sequences
-        output = output.replace("\\", "\\\\").replace("\"", "\\\"")
+        output = output.replace("\\", "\\\\")
         # Strip leading/trailing whitespace and extraneous text before JSON parsing
         output = output.strip()
         json_start = output.find('{')
