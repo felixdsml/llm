@@ -61,7 +61,7 @@ IF_DEBUG = False
 number_of_samples = 400
 
 # Set random seed for reproducibility
-random_seed = 50
+random_seed = 100
 random.seed(random_seed)
 
 # Configuration for base and evaluator models
@@ -74,10 +74,10 @@ model_info_base = [
     # {"model": "llama3:8b-text-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "llama3:8b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "command-r", "base_url": 'http://localhost:11435'},
-    {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
+    # {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
     # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
     # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
