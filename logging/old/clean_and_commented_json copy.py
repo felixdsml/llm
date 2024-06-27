@@ -61,7 +61,7 @@ IF_DEBUG = False
 number_of_samples = 400
 
 # Set random seed for reproducibility
-random_seed = 50
+random_seed = 100
 random.seed(random_seed)
 
 # Configuration for base and evaluator models
@@ -77,7 +77,7 @@ model_info_base = [
     {"model": "codegemma:7b-code-q5_K_M", "base_url": 'http://localhost:11435'},
     # {"model": "aya:35b", "base_url": 'http://localhost:11435'}, 
     # {"model": "qwen2:7b-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
-    # {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},
+    {"model": "deepseek-coder-v2:16b-lite-instruct-q5_K_M", "base_url": 'http://localhost:11435'},# TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
     # {"model": "llama3:8b-instruct-fp16", "base_url": 'http://localhost:11435'},
     # {"model": "codegemma:7b-code-fp16", "base_url": 'http://localhost:11435'},
     # Add more base models here as needed
@@ -87,6 +87,35 @@ model_info_eval = [
     {"evaluator_model": "llama3:70b", "evaluator_base_url": 'http://localhost:11434'}
 ]
 
+# # # # base ollama model config
+# params_config = {
+#     "model_type": "text",
+#     "timeout_s": 120,
+#     "temperature": 0.0,
+#     "max_tokens": 150,
+#     "top_p": 1,
+#     "top_k": 20,
+#     "frequency_penalty": 0,
+#     "presence_penalty": 0,
+#     "n": 1,
+#     "num_ctx": 1024,
+#     # "format": "json"
+# }
+
+# # # base ollama model config
+# params_config_base = {
+#     "model_type": "text",
+#     "timeout_s": 120,
+#     "temperature": 0.0,
+#     "max_tokens": 150,
+#     "top_p": 1,
+#     "top_k": 20,
+#     "frequency_penalty": 0,
+#     "presence_penalty": 0,
+#     "n": 1,
+#     "num_ctx": 1024,
+#     # "format": "json"
+# }
 
 params_config_base = {
     "model_type": "text",
@@ -101,7 +130,20 @@ params_config_base = {
     "num_ctx": 1024,
     # "format": "json"
 }
-
+# # # # base ollama model config
+# params_config_eval = {
+#     "model_type": "text",
+#     "timeout_s": 140,
+#     "temperature": 0.2,
+#     "max_tokens": 300,
+#     "top_p": 1,
+#     "top_k": 10,
+#     "frequency_penalty": 1,
+#     "presence_penalty": 1.2,
+#     "n": 1,
+#     "num_ctx": 1024,
+#     "format": "json"
+# }
 
 params_config_eval = {
     "model_type": "text",
@@ -117,6 +159,9 @@ params_config_eval = {
     "format": "json",
     # "stop": "}"
 }
+
+
+# Settings Dict:  {'model': 'llama3:70b', 'options': {'temperature': 0.0, 'top_p': 1, 'top_k': 20, 'frequency_penalty': 0, 'presence_penalty': 0, 'num_ctx': 1024, 'num_predict': 150}, 'stream': False, }
 
 
 def load_and_sample_dataset(number_of_samples=200):
@@ -219,6 +264,13 @@ class SQLMatch(dspy.Signature):
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
     match = dspy.OutputField(desc="Indicate whether the reference and predicted SQL query match", prefix="True:")
 
+# match_instruction = """
+# Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Think about why, build a rationale and then output a json with the key 'True' and the value 'Yes' if the queries match, otherwise 'No'.
+# {
+#   "rationale": "Explain why the queries match or do not match.",
+#   "True": "Yes" or "No"
+# }
+# """
 
 match_instruction = """Given a reference SQL query and a predicted SQL query, determine if the predicted SQL query matches the reference SQL query exactly. Think about why, build a rationale and then output a only a json with the key 'True' and the value 'Yes' if the queries match, otherwise 'No'.
 
@@ -257,8 +309,11 @@ class SQLCorrectness(dspy.Signature):
     sql_context = dspy.InputField(desc="Context for the query")
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
     correct = dspy.OutputField(desc="Indicate whether the predicted SQL query correctly answers the natural language query based on the given context. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
-    
-    
+
+# correctness_instruction = """
+# Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. Produce Json output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
+# """
+
 correctness_instruction = """Given a natural language query, its context, and a predicted SQL query, determine if the predicted SQL query correctly answers the natural language query based on the context. Produce a JSON output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
 
 Example 1 which does meet the criteria:
@@ -297,12 +352,31 @@ class SQLExecutable(dspy.Signature):
     sql_predicted = dspy.InputField(desc="Predicted SQL query")
     executable = dspy.OutputField(desc="Indicate whether the predicted SQL query is executable. Output only 'Yes' if it is correct, otherwise output only 'No'", prefix="True:")
 
+# executable_instruction = """
+# Answer only with Yes or No. Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors.
+# Produce Json output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No'.
+
+# Criteria:
+# 1. The SQL query must not include any additional text such as rationale, prompts, or context.
+# 2. It must be executable without modifications.
+
+# Example which does not meet the criteria:
+
+        
+# Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
+# Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: ```sql WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week ) SELECT * FROM peak_times
+# True: No
+
+# Sql Reference: SELECT State, SUM(PermitCount) AS TotalPermits FROM PermitsByState GROUP BY State;
+# Sql Predicted: WITH daily_usage AS (SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps), peak_times AS (SELECT day_of_week, MAX(usage_time) AS peak_time, MAX(data_usage) AS peak_usage FROM daily_usage GROUP BY day_of_week) SELECT * FROM peak_times
+# True: Yes
+# """
 
 executable_instruction = """Evaluate the provided SQL query to determine if it is executable as-is, without any extraneous text, rationale, or errors. Produce a JSON output with the key 'True' and the value 'Yes' if the query is executable, otherwise 'No', along with a rationale explaining why.
 
 Example 1 which does not meet the criteria:
 
-Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak time, MAX(data_usage) AS peak usage FROM daily_usage GROUP BY day_of-week ) SELECT * FROM peak times;
+Sql Predicted: Here is the completed SQL query for finding the peak usage time for each day of the week: ```sql WITH daily_usage AS ( SELECT EXTRACT(DOW FROM usage_time) AS day_of_week, usage_time, data_usage FROM usage_timestamps ), peak_times AS ( SELECT day_of_week, MAX(usage_time) AS peak time, MAX(data_usage) AS peak usage FROM daily_usage GROUP BY day_of-week ) SELECT * FROM peak times;
 True:
 
 Output 1:
@@ -563,7 +637,14 @@ excel_file = "log_evaluations.xlsx"
 for base_model in model_info_base:
     for eval_model in model_info_eval:     
         base_lm = OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config_base)
+        # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"])
+        # evaluator_lm = dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], temperature=0.2)
+        
+        # # Create instances of OllamaLocal for base models
+        # base_lm = [dspy.OllamaLocal(model=base_model["model"], base_url=base_model["base_url"], **params_config)]
 
+        # # Create instances of OllamaLocal for evaluator models
+        # evaluator_lm = [dspy.OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"], **params_config)]
         evaluator_lm = OllamaLocal(model=eval_model["evaluator_model"], base_url=eval_model["evaluator_base_url"],  **params_config_eval)
 
         
