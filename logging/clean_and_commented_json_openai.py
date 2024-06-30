@@ -61,12 +61,13 @@ IF_DEBUG = False
 number_of_samples = 400
 
 # Set random seed for reproducibility
-random_seed = 100
+random_seed = 50
 random.seed(random_seed)
 
 # Configuration for base and evaluator models
 model_info_base = [
-    {"model": "gpt-3.5-turbo", "base_url": 'http://localhost:11435'},
+    {"model": "gpt-4o", "base_url": 'http://localhost:11435'},
+    # {"model": "gpt-3.5-turbo", "base_url": 'http://localhost:11435'},
 
     # Add more base models here as needed
 ]
