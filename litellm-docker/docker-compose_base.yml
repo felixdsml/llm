@@ -1,0 +1,56 @@
+version: "3.11"
+services:
+  litellm:
+    build:
+      context: .
+      args:
+        target: runtime
+    image: ghcr.io/berriai/litellm:main-stable
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config_base.yaml:/app/config.yaml # Mount the local configuration file
+    command: [ "--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
+    environment:
+      DATABASE_URL: "postgresql://postgres:example@db:5432/postgres"
+      STORE_MODEL_IN_DB: "True"
+    env_file:
+      - .env
+    networks:
+      - my_network
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    networks:
+      - my_network
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+      - /usr/share/ollama/.ollama/models:/root/.ollama/models  # Add this line for mapping
+      #sud chmod -R 755 /usr/share/ollama/.ollama/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
+
+volumes:
+  ollama:

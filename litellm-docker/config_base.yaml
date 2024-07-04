@@ -1,0 +1,85 @@
+model_list:
+  - model_name: mistral:7b-instruct-v0.3-q5_K_M
+    litellm_params:
+      model: ollama/mistral:7b-instruct-v0.3-q5_K_M
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest
+    litellm_params:
+      model: ollama/llama-3-8b-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest
+    litellm_params:
+      model: ollama/llama-3-8b-Instruct-bnb-4bit-synthetic_text_to_sql-lora-3epochs-Q5_K_M:latest
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest
+    litellm_params:
+      model: ollama/Phi-3-medium-4k-instruct-synthetic_text_to_sql-lora-3epochs-q5_k_m:latest
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: phi3:14b-medium-4k-instruct-q5_K_M
+    litellm_params:
+      model: ollama/phi3:14b-medium-4k-instruct-q5_K_M
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: llama3:8b-text-q5_K_M
+    litellm_params:
+      model: ollama/llama3:8b-text-q5_K_M
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: llama3:8b-instruct-q5_K_M
+    litellm_params:
+      model: ollama/llama3:8b-instruct-q5_K_M
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: command-r
+    litellm_params:
+      model: ollama/command-r
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: codegemma:7b-code-q5_K_M
+    litellm_params:
+      model: ollama/codegemma:7b-code-q5_K_M
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: aya:35b
+    litellm_params:
+      model: ollama/aya:35b
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: qwen2:7b-instruct-q5_K_M
+    litellm_params:
+      model: ollama/qwen2:7b-instruct-q5_K_M
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: llama3:8b-instruct-fp16
+    litellm_params:
+      model: ollama/llama3:8b-instruct-fp16
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  - model_name: codegemma:7b-code-fp16
+    litellm_params:
+      model: ollama/codegemma:7b-code-fp16
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+
+  # - model_name: deepseek-coder-v2:16b-lite-instruct-q5_K_M
+  #   litellm_params:
+  #     model: ollama/deepseek-coder-v2:16b-lite-instruct-q5_K_M
+  #     api_base: http://ollama:11434
+  #     api_key: LITELLM_MASTER_KEY
+

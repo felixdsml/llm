@@ -1,0 +1,33 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "sql_prompt": "What is the average CO2 emission reduction of green building projects in the 'GreenBuildingProjects' table, grouped by reduction_type?",
+        "sql_context": "CREATE TABLE GreenBuildingProjects (id INT, reduction_type VARCHAR(50), co2_reduction FLOAT); INSERT INTO GreenBuildingProjects (id, reduction_type, co2_reduction) VALUES (1, 'Insulation', 50.0), (2, 'Lighting', 75.0), (3, 'Insulation', 60.0);",
+        "sql": "SELECT reduction_type, AVG(co2_reduction) FROM GreenBuildingProjects GROUP BY reduction_type;"
+      },
+      {
+        "sql_prompt": "How many marine species are affected by ocean acidification?",
+        "sql_context": "CREATE TABLE species_impact (id INTEGER, name VARCHAR(255), species VARCHAR(255), affected_by_acidification BOOLEAN);",
+        "sql": "SELECT COUNT(*) FROM species_impact WHERE affected_by_acidification = TRUE;"
+      },
+      {
+        "sql_prompt": "How many unique service types are provided in the 'defendant_services' table?",
+        "sql_context": "CREATE TABLE defendant_services (id INT, case_number INT, defendant_name VARCHAR(255), service_type VARCHAR(255)); INSERT INTO defendant_services (id, case_number, defendant_name, service_type) VALUES (1, 1234, 'Jane Doe', 'Education');",
+        "sql": "SELECT COUNT(DISTINCT service_type) FROM defendant_services;"
+      },
+      {
+        "sql_prompt": "What is the total number of articles published by each author in a specific year and month from the 'investigative_reports' table?",
+        "sql_context": "CREATE TABLE investigative_reports (id INT, title VARCHAR(255), author VARCHAR(255), publication_date DATE);",
+        "sql": "SELECT author, EXTRACT(YEAR FROM publication_date) as year, EXTRACT(MONTH FROM publication_date) as month, COUNT(*) as total_articles FROM investigative_reports WHERE EXTRACT(YEAR FROM publication_date) = 2021 AND EXTRACT(MONTH FROM publication_date) = 12 GROUP BY author, year, month;"
+      }
+    ],
+    "signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Given the fields `sql_prompt`, `sql_context`, produce the fields `sql`.",
+    "extended_signature_prefix": "Sql:"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "program": {
+    "lm": null,
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature_instructions": "Signature for Text to SQL generation task.",
+    "signature_prefix": "Sql:",
+    "extended_signature_instructions": "Signature for Text to SQL generation task.",
+    "extended_signature_prefix": "Sql:"
+  }
+}

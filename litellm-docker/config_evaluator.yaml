@@ -1,0 +1,10 @@
+model_list:
+  - model_name: llama3:70b
+    litellm_params:
+      model: ollama/llama3:70b
+      api_base: http://ollama:11434
+      api_key: LITELLM_MASTER_KEY
+router_settings:
+  redis_host: redis_host
+  redis_password: redis_password
+  redis_port: 1992
