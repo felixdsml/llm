@@ -114,6 +114,7 @@ env-phoenix-dspy
 env-phoenix-dspy-2_5
 env-phoenix-dspy-fixed
 env-ds
+env-llm-eval
 
 # Spyder project settings
 .spyderproject
