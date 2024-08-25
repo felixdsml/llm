@@ -4,48 +4,6 @@
 
 This repository is a part of my thesis work focused on the development, deployment, and evaluation of a language model. Below is a description of the folder structure and the purpose of each file and directory.
 
-## Folder Structure
-
-```
-.
-├── convert-to-pdf
-│   └── convert_to_pdf.ipynb
-├── deployment
-│   ├── prompts.txt
-│   └── streamlit-openai-chat.py
-├── evaluation-pipeline
-│   ├── clean_and_commented_json.py
-│   ├── clean_and_commented_json_openai.py
-│   ├── evaluation
-│   │   ├── evaluation.ipynb
-│   │   ├── figures
-│   │   ├── latex
-│   │   ├── log_evaluations.xlsx
-│   │   └── model_sizes.xlsx
-│   ├── log_evaluations.xlsx
-│   ├── logs
-│   ├── optimized_programs
-│   ├── thesis_figures
-│   │   ├── prompting_techniques_hierarchy.png
-│   │   └── thesis_figures.ipynb
-│   ├── utils_evaluate.py
-│   ├── utils_ollamalocal.py
-│   └── utils_random_search.py
-├── folder_structure.txt
-├── litellm-docker
-│   ├── config_base.yaml
-│   ├── config_evaluator.yaml
-│   ├── docker-compose-eval.yml
-│   └── docker-compose_base.yml
-├── phoenix-docker
-│   └── docker-compose.yml
-└── unsloth_tunes
-    ├── Alpaca_+_Llama_3_8b_full_example_sql_edit_checkpoint.ipynb
-    ├── Llama_3_8b_chat_template_Unsloth_2x_faster_finetuning_edit.ipynb
-    ├── Phi_3_Medium_4K_Instruct_Unsloth_2x_faster_finetuning.ipynb
-    ├── req_conda_unsloth.txt
-    └── restore_artifacts.ipynb
-```
 
 ### Directory and File Descriptions
 
